@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hangman Verb Challenge</title>
+<style>
+  :root {
+    --navy: #1a3c6e;
+    --navy-dark: #0b2445;
+    --blue: #2060a0;
+    --purple: #8a2be2;
+    --green: #1a7f37;
+    --red: #c9211e;
+    --grey: #555555;
+    --light-grey: #c9c9c9;
+    --bg: #f4f6fb;
+    --card-bg: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+  .zh { font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "WenQuanYi Zen Hei", sans-serif; }
+
+  #app {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+
+  header.top {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  header.top h1 {
+    color: var(--navy);
+    font-size: 1.9rem;
+    margin: 0 0 4px;
+  }
+  header.top p.zh {
+    color: var(--grey);
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---------- Start screen ---------- */
+  .level-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .level-card {
+    background: var(--card-bg);
+    border: 2px solid #e2e6ef;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+  }
+  .level-card:hover, .level-card:focus-visible {
+    border-color: var(--navy);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(26,60,110,0.15);
+  }
+  .level-card .badge {
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 999px;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  .level-card h3 { margin: 0 0 6px; font-size: 1.25rem; color: var(--navy-dark); }
+  .level-card p { margin: 4px 0; font-size: .92rem; color: var(--grey); line-height: 1.4; }
+  .level-card .count { font-size: .8rem; color: var(--light-grey); margin-top: 8px; }
+
+  .lvl-easy .badge { background: var(--green); }
+  .lvl-medium .badge { background: #b8860b; }
+  .lvl-hard .badge { background: var(--red); }
+
+  .intro-box {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 16px 20px;
+    border: 1px solid #e2e6ef;
+    font-size: .95rem;
+    line-height: 1.5;
+  }
+  .intro-box .zh { color: var(--grey); font-size: .9rem; margin-top: 6px; }
+
+  /* ---------- Game screen ---------- */
+  .game-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .game-topbar .pill {
+    background: var(--navy);
+    color: #fff;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: .85rem;
+    font-weight: 600;
+  }
+  .btn-link {
+    background: none;
+    border: none;
+    color: var(--blue);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: .9rem;
+    padding: 4px;
+  }
+
+  .game-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid #e2e6ef;
+    padding: 22px;
+  }
+  @media (max-width: 640px) {
+    .game-panel { grid-template-columns: 1fr; }
+  }
+
+  .clue-col h2.hanzi { font-size: 2.4rem; margin: 0; color: #111; }
+  .clue-col .pinyin { color: var(--blue); font-style: italic; font-size: 1.05rem; margin: 2px 0 14px; }
+
+  .word-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0 6px;
+  }
+  .letter-box {
+    width: 34px;
+    height: 42px;
+    border-bottom: 3px solid var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-family: "Courier New", monospace;
+    color: var(--navy-dark);
+  }
+  .wrong-count { font-size: .85rem; color: var(--grey); margin-top: 6px; }
+
+  .gallows-wrap { display: flex; align-items: center; justify-content: center; }
+  #gallows-svg { width: 100%; max-width: 220px; height: auto; }
+  .part { opacity: 0; transition: opacity .25s ease; }
+  .part.show { opacity: 1; }
+
+  #keyboard {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 6px;
+    margin-top: 18px;
+  }
+  @media (max-width: 480px) {
+    #keyboard { grid-template-columns: repeat(7, 1fr); }
+  }
+  .key {
+    padding: 9px 0;
+    border-radius: 6px;
+    border: 1px solid #d3d9e6;
+    background: #fff;
+    font-weight: 700;
+    font-size: .95rem;
+    cursor: pointer;
+    color: #222;
+  }
+  .key:hover:not(:disabled) { background: #eef2ff; border-color: var(--navy); }
+  .key:disabled { cursor: default; opacity: .55; }
+  .key.correct { background: var(--green); color: #fff; border-color: var(--green); }
+  .key.wrong { background: #f2dede; color: var(--red); border-color: var(--red); }
+
+  .message-bar {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: .95rem;
+    display: none;
+  }
+  .message-bar.show { display: block; }
+  .message-bar.info { background: #eef2ff; color: var(--navy-dark); }
+  .message-bar.success { background: #e6f6ea; color: var(--green); }
+  .message-bar.fail { background: #fdeaea; color: var(--red); }
+
+  .sentence-box {
+    grid-column: 1 / -1;
+    border-top: 1px dashed var(--light-grey);
+    margin-top: 6px;
+    padding-top: 16px;
+  }
+  .tense-label {
+    display: inline-block;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--purple);
+    background: #f4ebfc;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .sentence-box .sentence { font-size: 1.05rem; line-height: 1.6; }
+  .sentence-box .sentence .blank-placeholder {
+    display: inline-block;
+    font-family: "Courier New", monospace;
+    font-weight: 700;
+    color: var(--light-grey);
+    letter-spacing: 2px;
+  }
+  .sentence-box .sentence input[type=text] {
+    font-family: "Courier New", monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    width: 150px;
+    border: 2px solid var(--navy);
+    border-radius: 6px;
+    text-align: center;
+  }
+  .filled-blank {
+    display: inline-block;
+    font-family: "Courier New", monospace;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--green);
+    border-bottom: 3px solid var(--green);
+    padding: 0 6px 1px;
+  }
+  .sentence-actions { margin-top: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  button.primary {
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: .95rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button.primary:hover { background: var(--navy-dark); }
+  button.primary:disabled { opacity: .5; cursor: default; }
+  button.secondary {
+    background: #fff;
+    color: var(--navy);
+    border: 2px solid var(--navy);
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: .9rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* ---------- Result screen ---------- */
+  .result-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid #e2e6ef;
+    padding: 30px;
+    text-align: center;
+  }
+  .result-card h2 { color: var(--navy); margin-top: 0; }
+  .stat-row { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin: 22px 0; }
+  .stat { min-width: 110px; }
+  .stat .num { font-size: 2rem; font-weight: 800; color: var(--navy); }
+  .stat .label { font-size: .82rem; color: var(--grey); }
+  .result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+
+  footer.credit {
+    text-align: center;
+    color: var(--light-grey);
+    font-size: .78rem;
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="top">
+    <h1>Hangman Verb Challenge</h1>
+    <p class="zh">猜词游戏 — 动词与简单时态</p>
+  </header>
+
+  <!-- START SCREEN -->
+  <section id="screen-start" class="screen active">
+    <div class="intro-box">
+      Read the Chinese clue and the sentence below it, then guess the English verb one letter at a time.
+      Every wrong guess adds a piece to the hangman. Solve the word, then type the verb form the sentence
+      calls for — past, present, or future — to finish the round.
+      <div class="zh">看汉语提示和下面的句子,一个字母一个字母猜出这个英语动词。每猜错一次,绞刑架就会多画一部分。
+      猜出单词后,再根据句子的时态(过去式、现在式或将来式)写出正确的动词形式,完成这一轮。</div>
+    </div>
+
+    <div class="level-grid" id="level-grid"></div>
+  </section>
+
+  <!-- GAME SCREEN -->
+  <section id="screen-game" class="screen">
+    <div class="game-topbar">
+      <span class="pill" id="progress-pill">Word 1 of 9</span>
+      <span class="pill" id="level-pill">Easy</span>
+      <button class="btn-link" id="quit-btn">&larr; change difficulty</button>
+    </div>
+
+    <div class="game-panel">
+      <div class="clue-col">
+        <h2 class="hanzi" id="clue-hanzi">成为</h2>
+        <div class="pinyin" id="clue-pinyin">(chéng wéi)</div>
+
+        <div class="word-display" id="word-display"></div>
+        <div class="wrong-count" id="wrong-count">Wrong guesses: 0 / 6</div>
+
+        <div id="keyboard"></div>
+
+        <div class="message-bar" id="message-bar"></div>
+      </div>
+
+      <div class="gallows-wrap">
+        <svg id="gallows-svg" viewBox="0 0 200 220">
+          <line x1="15" y1="205" x2="120" y2="205" stroke="#1a3c6e" stroke-width="6" stroke-linecap="round"/>
+          <line x1="45" y1="205" x2="45" y2="15" stroke="#1a3c6e" stroke-width="6" stroke-linecap="round"/>
+          <line x1="45" y1="15" x2="130" y2="15" stroke="#1a3c6e" stroke-width="6" stroke-linecap="round"/>
+          <line x1="130" y1="15" x2="130" y2="38" stroke="#1a3c6e" stroke-width="4"/>
+          <circle class="part" id="part-1" cx="130" cy="55" r="16" fill="none" stroke="#0b2445" stroke-width="4"/>
+          <line class="part" id="part-2" x1="130" y1="71" x2="130" y2="130" stroke="#0b2445" stroke-width="4"/>
+          <line class="part" id="part-3" x1="130" y1="85" x2="104" y2="110" stroke="#0b2445" stroke-width="4" stroke-linecap="round"/>
+          <line class="part" id="part-4" x1="130" y1="85" x2="156" y2="110" stroke="#0b2445" stroke-width="4" stroke-linecap="round"/>
+          <line class="part" id="part-5" x1="130" y1="130" x2="108" y2="162" stroke="#0b2445" stroke-width="4" stroke-linecap="round"/>
+          <line class="part" id="part-6" x1="130" y1="130" x2="152" y2="162" stroke="#0b2445" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <div class="sentence-box" id="sentence-box">
+        <div class="tense-label" id="tense-label"></div>
+        <div class="sentence" id="sentence-text"></div>
+        <div class="sentence-actions">
+          <button class="primary" id="check-sentence-btn" style="display:none;">Check</button>
+          <button class="secondary" id="reveal-answer-btn" style="display:none;">Show answer</button>
+          <button class="primary" id="next-word-btn" style="display:none;">Next word &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULT SCREEN -->
+  <section id="screen-result" class="screen">
+    <div class="result-card">
+      <h2>Round complete! 完成!</h2>
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="stat-solved">0/0</div><div class="label">Words guessed</div></div>
+        <div class="stat"><div class="num" id="stat-perfect">0</div><div class="label">Perfect sentences (1st try)</div></div>
+        <div class="stat"><div class="num" id="stat-losses">0</div><div class="label">Times hangman finished</div></div>
+      </div>
+      <div class="result-actions">
+        <button class="primary" id="replay-btn">Play this level again</button>
+        <button class="secondary" id="menu-btn">Choose a different level</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="credit">Hangman Verb Challenge · runs entirely in your browser, no data collected</footer>
+</div>
+
+<script>
+/* ============================= WORD BANK ============================= */
+// tense: "past" | "present" | "future" — the form expected in the blank.
+// answer: the exact string that must be typed for that tense.
+const WORD_BANK = {
+  easy: [
+    { en:"finish",   answer:"finishes",  tense:"present", hz:"完成",   py:"wán chéng",  sentence:"Every evening, he ___ his homework before dinner." },
+    { en:"arrive",   answer:"arrived",   tense:"past",    hz:"到达",   py:"dào dá",     sentence:"The train ___ ten minutes late yesterday." },
+    { en:"decide",   answer:"decided",   tense:"past",    hz:"决定",   py:"jué dìng",   sentence:"She ___ to study medicine after high school." },
+    { en:"promise",  answer:"will promise", tense:"future", hz:"答应", py:"dā ying",    sentence:"My father ___ to take me fishing next weekend." },
+    { en:"prefer",   answer:"preferred", tense:"past",    hz:"更喜欢", py:"gèng xǐ huan", sentence:"Last year she ___ tea, but now she drinks coffee." },
+    { en:"listen",   answer:"listens",   tense:"present", hz:"听",     py:"tīng",       sentence:"He always ___ carefully to the teacher's explanation." },
+    { en:"practice", answer:"practiced", tense:"past",    hz:"练习",   py:"liàn xí",    sentence:"She ___ the piano for two hours yesterday." },
+    { en:"complete", answer:"will complete", tense:"future", hz:"使完整", py:"shǐ wán zhěng", sentence:"She ___ the puzzle by tomorrow afternoon." },
+    { en:"prepare",  answer:"prepared",  tense:"past",    hz:"准备",   py:"zhǔn bèi",   sentence:"He ___ dinner before his guests arrived." },
+  ],
+  medium: [
+    { en:"become",   answer:"became",    tense:"past",    hz:"成为", py:"chéng wéi",  sentence:"After years of practice, she ___ a professional pianist." },
+    { en:"forget",   answer:"forgets",   tense:"present", hz:"忘记", py:"wàng jì",    sentence:"He often ___ his umbrella when it rains." },
+    { en:"begin",    answer:"began",     tense:"past",    hz:"开始", py:"kāi shǐ",    sentence:"The concert ___ exactly at eight o'clock." },
+    { en:"forgive",  answer:"forgave",   tense:"past",    hz:"原谅", py:"yuán liàng", sentence:"Her sister finally ___ her after the argument." },
+    { en:"mistake",  answer:"will mistake", tense:"future", hz:"弄错", py:"nòng cuò", sentence:"Next time, she ___ him for his twin brother again." },
+    { en:"withdraw", answer:"withdrew",  tense:"past",    hz:"取钱", py:"qǔ qián",    sentence:"She ___ some money from the bank this morning." },
+    { en:"rewrite",  answer:"rewrites",  tense:"present", hz:"重写", py:"chóng xiě",  sentence:"The teacher says he always ___ his essays at least twice." },
+    { en:"foresee",  answer:"foresaw",   tense:"past",    hz:"预见", py:"yù jiàn",    sentence:"Nobody ___ such a big change in the weather." },
+    { en:"mislead",  answer:"will mislead", tense:"future", hz:"误导", py:"wù dǎo",   sentence:"That confusing sign ___ a lot of tourists next summer." },
+  ],
+  hard: [
+    { en:"continue",   answer:"continued",   tense:"past",    hz:"继续", py:"jì xù",      sentence:"The rain ___ all night long." },
+    { en:"remember",   answer:"remembers",   tense:"present", hz:"记得", py:"jì de",      sentence:"He always ___ her birthday without being reminded." },
+    { en:"imagine",    answer:"imagined",    tense:"past",    hz:"想象", py:"xiǎng xiàng",sentence:"I never ___ that the trip would be so much fun." },
+    { en:"discover",   answer:"discovered",  tense:"past",    hz:"发现", py:"fā xiàn",    sentence:"Scientists ___ a new kind of fish last month." },
+    { en:"organize",   answer:"will organize", tense:"future", hz:"组织", py:"zǔ zhī",   sentence:"The students ___ a charity event next term." },
+    { en:"celebrate",  answer:"celebrated",  tense:"past",    hz:"庆祝", py:"qìng zhù",   sentence:"We ___ grandma's birthday last weekend." },
+    { en:"understand", answer:"understood",  tense:"past",    hz:"理解", py:"lǐ jiě",     sentence:"At first, nobody ___ the instructions." },
+    { en:"overcome",   answer:"overcomes",   tense:"present", hz:"克服", py:"kè fú",      sentence:"A good athlete always ___ setbacks with hard work." },
+    { en:"undertake",  answer:"undertook",   tense:"past",    hz:"承担", py:"chéng dān",  sentence:"The company ___ a big new project last year." },
+    { en:"overtake",   answer:"will overtake", tense:"future", hz:"超过", py:"chāo guò", sentence:"That red car ___ the bus again if it speeds up." },
+    { en:"overthrow",  answer:"overthrew",   tense:"past",    hz:"推翻", py:"tuī fān",    sentence:"The army ___ the old government that year." },
+    { en:"undergo",    answer:"underwent",   tense:"past",    hz:"经历", py:"jīng lì",    sentence:"The old building ___ a complete renovation last spring." },
+  ],
+};
+
+const TENSE_LABEL = {
+  past:    "simple past",
+  present: "simple present",
+  future:  "simple future",
+};
+
+const LEVEL_META = {
+  easy:   { label: "Easy",   badge: "Level 1", cls: "lvl-easy",
+            desc: "2-syllable verbs, regular past tense — just add “-ed”.",
+            zh: "双音节动词,规则过去式(加 -ed)。" },
+  medium: { label: "Medium", badge: "Level 2", cls: "lvl-medium",
+            desc: "2-syllable verbs, irregular past tense — no easy pattern.",
+            zh: "双音节动词,不规则过去式,没有固定规律。" },
+  hard:   { label: "Hard",   badge: "Level 3", cls: "lvl-hard",
+            desc: "3-syllable verbs, a mix of regular and irregular forms.",
+            zh: "三音节动词,规则与不规则混合。" },
+};
+
+const MAX_WRONG = 6;
+
+/* ============================= STATE ============================= */
+let state = {
+  level: null,
+  queue: [],
+  index: 0,
+  current: null,
+  guessed: new Set(),
+  wrong: 0,
+  wordSolved: false,
+  sentenceLocked: false,
+  sentenceAttempts: 0,
+  stats: { solved: 0, perfect: 0, losses: 0, total: 0 },
+};
+
+/* ============================= DOM refs ============================= */
+const screens = {
+  start: document.getElementById('screen-start'),
+  game: document.getElementById('screen-game'),
+  result: document.getElementById('screen-result'),
+};
+const levelGrid = document.getElementById('level-grid');
+const progressPill = document.getElementById('progress-pill');
+const levelPill = document.getElementById('level-pill');
+const clueHanzi = document.getElementById('clue-hanzi');
+const cluePinyin = document.getElementById('clue-pinyin');
+const wordDisplay = document.getElementById('word-display');
+const wrongCountEl = document.getElementById('wrong-count');
+const keyboardEl = document.getElementById('keyboard');
+const messageBar = document.getElementById('message-bar');
+const sentenceBox = document.getElementById('sentence-box');
+const sentenceText = document.getElementById('sentence-text');
+const tenseLabel = document.getElementById('tense-label');
+const checkSentenceBtn = document.getElementById('check-sentence-btn');
+const revealAnswerBtn = document.getElementById('reveal-answer-btn');
+const nextWordBtn = document.getElementById('next-word-btn');
+
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  screens[name].classList.add('active');
+}
+
+/* ============================= Build start screen ============================= */
+function buildLevelGrid() {
+  levelGrid.innerHTML = '';
+  Object.keys(WORD_BANK).forEach(key => {
+    const meta = LEVEL_META[key];
+    const words = WORD_BANK[key];
+    const card = document.createElement('div');
+    card.className = `level-card ${meta.cls}`;
+    card.tabIndex = 0;
+    card.innerHTML = `
+      <span class="badge">${meta.badge}</span>
+      <h3>${meta.label}</h3>
+      <p>${meta.desc}</p>
+      <p class="zh">${meta.zh}</p>
+      <div class="count">${words.length} words in this set</div>
+    `;
+    card.addEventListener('click', () => startLevel(key));
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') startLevel(key); });
+    levelGrid.appendChild(card);
+  });
+}
+
+/* ============================= Game flow ============================= */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startLevel(key) {
+  state.level = key;
+  state.queue = shuffle(WORD_BANK[key]);
+  state.index = 0;
+  state.stats = { solved: 0, perfect: 0, losses: 0, total: state.queue.length };
+  levelPill.textContent = LEVEL_META[key].label;
+  showScreen('game');
+  loadWord();
+}
+
+function loadWord() {
+  state.current = state.queue[state.index];
+  state.guessed = new Set();
+  state.wrong = 0;
+  state.wordSolved = false;
+  state.sentenceLocked = false;
+  state.sentenceAttempts = 0;
+
+  progressPill.textContent = `Word ${state.index + 1} of ${state.queue.length}`;
+  clueHanzi.textContent = state.current.hz;
+  cluePinyin.textContent = `(${state.current.py})`;
+
+  document.querySelectorAll('.part').forEach(p => p.classList.remove('show'));
+  wrongCountEl.textContent = `Wrong guesses: 0 / ${MAX_WRONG}`;
+  hideMessage();
+
+  nextWordBtn.style.display = 'none';
+  revealAnswerBtn.style.display = 'none';
+  checkSentenceBtn.disabled = false;
+  checkSentenceBtn.style.display = 'none';
+
+  renderWordDisplay();
+  buildKeyboard();
+  renderSentenceStatic();
+}
+
+function renderWordDisplay() {
+  wordDisplay.innerHTML = '';
+  const word = state.current.en;
+  for (const ch of word) {
+    const box = document.createElement('div');
+    box.className = 'letter-box';
+    box.textContent = state.guessed.has(ch) ? ch.toUpperCase() : '';
+    wordDisplay.appendChild(box);
+  }
+}
+
+function buildKeyboard() {
+  keyboardEl.innerHTML = '';
+  'abcdefghijklmnopqrstuvwxyz'.split('').forEach(letter => {
+    const btn = document.createElement('button');
+    btn.className = 'key';
+    btn.textContent = letter.toUpperCase();
+    btn.addEventListener('click', () => handleGuess(letter));
+    keyboardEl.appendChild(btn);
+  });
+}
+
+function handleGuess(letter) {
+  if (state.wordSolved || state.wrong >= MAX_WRONG) return;
+  if (state.guessed.has(letter)) return;
+  state.guessed.add(letter);
+
+  const buttons = keyboardEl.querySelectorAll('.key');
+  const idx = letter.charCodeAt(0) - 97;
+  const btn = buttons[idx];
+
+  if (state.current.en.includes(letter)) {
+    btn.classList.add('correct');
+    btn.disabled = true;
+    renderWordDisplay();
+    checkWordSolved();
+  } else {
+    btn.classList.add('wrong');
+    btn.disabled = true;
+    state.wrong++;
+    document.getElementById(`part-${state.wrong}`).classList.add('show');
+    wrongCountEl.textContent = `Wrong guesses: ${state.wrong} / ${MAX_WRONG}`;
+    if (state.wrong >= MAX_WRONG) {
+      loseWord();
+    }
+  }
+}
+
+function checkWordSolved() {
+  const word = state.current.en;
+  const solved = [...word].every(ch => state.guessed.has(ch));
+  if (solved) {
+    state.wordSolved = true;
+    state.stats.solved++;
+    disableKeyboard();
+    showMessage('success', `Well done — the word was "${word}"! Say it out loud, then complete the sentence below.`);
+    openSentenceStage();
+  }
+}
+
+function loseWord() {
+  state.stats.losses++;
+  disableKeyboard();
+  showMessage('fail', `Out of guesses — the word was "${state.current.en}". Say it out loud, then try the sentence below.`);
+  openSentenceStage();
+}
+
+function disableKeyboard() {
+  keyboardEl.querySelectorAll('.key').forEach(b => b.disabled = true);
+}
+
+// Shown from the moment a word loads: the sentence is visible right away
+// (as context/a clue while guessing), but the blank is just a placeholder —
+// it only turns into a real input once the hangman word is solved or lost.
+function renderSentenceStatic() {
+  tenseLabel.textContent = TENSE_LABEL[state.current.tense] || '';
+  const [before, after] = state.current.sentence.split('___');
+  const placeholderWidth = Math.max(state.current.answer.replace(/^will /, '').length, 6);
+  sentenceText.innerHTML =
+    `${before}<span class="blank-placeholder">${'_'.repeat(placeholderWidth)}</span>${after}`;
+}
+
+function openSentenceStage() {
+  const [before, after] = state.current.sentence.split('___');
+  sentenceText.innerHTML = `${before}<input type="text" id="past-input" autocomplete="off" spellcheck="false">${after}`;
+  document.getElementById('past-input').focus();
+  checkSentenceBtn.style.display = 'inline-block';
+}
+
+function checkSentence() {
+  const input = document.getElementById('past-input');
+  const val = input.value.trim().toLowerCase();
+  state.sentenceAttempts++;
+  if (val === state.current.answer.toLowerCase()) {
+    if (state.sentenceAttempts === 1) state.stats.perfect++;
+    showMessage('success', `Correct — "${state.current.answer}". Great work!`);
+    fillBlank(state.current.answer);
+    checkSentenceBtn.style.display = 'none';
+    revealAnswerBtn.style.display = 'none';
+    nextWordBtn.style.display = 'inline-block';
+  } else {
+    input.style.borderColor = 'var(--red)';
+    showMessage('fail', 'Not quite — check the spelling and verb tense, then try again.');
+    if (state.sentenceAttempts >= 2) revealAnswerBtn.style.display = 'inline-block';
+  }
+}
+
+function revealAnswer() {
+  showMessage('info', `The answer is "${state.current.answer}".`);
+  fillBlank(state.current.answer);
+  checkSentenceBtn.style.display = 'none';
+  revealAnswerBtn.style.display = 'none';
+  nextWordBtn.style.display = 'inline-block';
+}
+
+// Replaces the sentence's text input with the solved word, styled like a
+// completed fill-in-the-blank rather than an editable field.
+function fillBlank(word) {
+  const input = document.getElementById('past-input');
+  if (!input) return;
+  const span = document.createElement('span');
+  span.className = 'filled-blank';
+  span.textContent = word;
+  input.replaceWith(span);
+}
+
+function nextWord() {
+  state.index++;
+  if (state.index >= state.queue.length) {
+    showResults();
+  } else {
+    loadWord();
+  }
+}
+
+function showMessage(kind, text) {
+  messageBar.className = `message-bar show ${kind}`;
+  messageBar.textContent = text;
+}
+function hideMessage() {
+  messageBar.className = 'message-bar';
+  messageBar.textContent = '';
+}
+
+function showResults() {
+  document.getElementById('stat-solved').textContent = `${state.stats.solved}/${state.stats.total}`;
+  document.getElementById('stat-perfect').textContent = state.stats.perfect;
+  document.getElementById('stat-losses').textContent = state.stats.losses;
+  showScreen('result');
+}
+
+/* ============================= Wire up events ============================= */
+checkSentenceBtn.addEventListener('click', checkSentence);
+revealAnswerBtn.addEventListener('click', revealAnswer);
+nextWordBtn.addEventListener('click', nextWord);
+document.getElementById('quit-btn').addEventListener('click', () => showScreen('start'));
+document.getElementById('replay-btn').addEventListener('click', () => startLevel(state.level));
+document.getElementById('menu-btn').addEventListener('click', () => showScreen('start'));
+
+document.getElementById('sentence-box').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !checkSentenceBtn.disabled) checkSentence();
+});
+
+window.addEventListener('keydown', e => {
+  if (!screens.game.classList.contains('active')) return;
+  if (document.activeElement && document.activeElement.id === 'past-input') return;
+  const letter = e.key.toLowerCase();
+  if (letter.length === 1 && letter >= 'a' && letter <= 'z') {
+    handleGuess(letter);
+  }
+});
+
+buildLevelGrid();
+</script>
+</body>
+</html>
