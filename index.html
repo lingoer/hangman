@@ -267,12 +267,30 @@
 
 
         // Clean any code block backticks if Gemini accidentally included them
-        rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+              let finalArray;
         
-        roundWords = JSON.parse(rawText);
+        // If data is already an array or object from the worker, use it directly
+        if (typeof data === "object") {
+          finalArray = data;
+        } else {
+          // If it's a string, clean it and parse it
+          let cleanText = data.replace(/```json/g, "").replace(/```/g, "").trim();
+          finalArray = JSON.parse(cleanText);
+        }
+        
+        // Extract from candidates object if it's still wrapped in the raw Gemini structure
+        if (finalArray.candidates && finalArray.candidates?.content?.parts?.text) {
+          let innerText = finalArray.candidates.content.parts.text;
+          innerText = innerText.replace(/```json/g, "").replace(/```/g, "").trim();
+          roundWords = JSON.parse(innerText);
+        } else {
+          roundWords = finalArray;
+        }
+
+        // --- THIS IS THE ONLY THING THAT SHOULD BE LEFT AT THE END ---
         loader.style.display = 'none';
-        
         loadWordInstance();
+
 
       } catch (err) {
         console.error("Failed to build dynamic list:", err);
