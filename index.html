@@ -1,452 +1,887 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mandarin Verb Hangman</title>
-  <style>
-    :root {
-      --bg-primary: #121214;
-      --bg-secondary: #1a1a1e;
-      --accent: #bb86fc;
-      --accent-hover: #9c27b0;
-      --text-main: #e1e1e6;
-      --text-muted: #a8a8b3;
-      --wrong: #ff5555;
-      --right: #50fa7b;
-      --border: #29292e;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-primary);
-      color: var(--text-main);
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      line-height: 1.6;
-    }
-    h1, h2 { color: #fff; margin-bottom: 5px; }
-    h1 { font-size: 1.8rem; margin-top: 0; }
-    .subtitle { color: var(--accent); font-weight: bold; margin-bottom: 20px; }
-    .intro { background: var(--bg-secondary); border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin-bottom: 25px; font-size: 0.95rem; }
-    .game-container { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); position: relative; }
-    .loading-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(26,26,30,0.9); border-radius:8px; display:none; flex-direction:column; justify-content:center; align-items:center; z-index:10; }
-    .spinner { border: 4px solid rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 50%; border-left-color: var(--accent); animation: spin 1s linear infinite; margin-bottom: 10px; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-    .badge { background: #38383f; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; color: var(--text-main); }
-    .badge.time-cue { background: #4a148c; color: #f3e5f5; }
-    .english-meaning { font-size: 2.2rem; font-weight: bold; color: #fff; margin: 15px 0; text-align: center; }
-    .word-blanks { font-size: 2.5rem; letter-spacing: 8px; text-align: center; margin: 25px 0; font-family: monospace; color: var(--accent); min-height: 60px; }
-    .wrong-guesses { text-align: center; color: var(--text-muted); margin-bottom: 20px; font-size: 1.1rem; }
-    .wrong-letters { color: var(--wrong); font-weight: bold; letter-spacing: 3px; }
-    .keyboard { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; margin: 20px 0; }
-    .key { background: #29292e; border: 1px solid var(--border); color: #fff; padding: 12px 0; font-size: 1.1rem; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.1s; }
-    .key:hover:not(:disabled) { background: #3e3e46; }
-    .key:disabled { opacity: 0.25; cursor: not-allowed; }
-    .sentence-section { background: #121214; border: 1px solid var(--border); padding: 20px; border-radius: 6px; margin-top: 25px; display: none; }
-    .sentence-line { font-size: 1.6rem; margin-bottom: 10px; letter-spacing: 1px; line-height: 1.4; }
-    .sentence-pinyin { font-size: 1.2rem; color: var(--text-muted); margin-bottom: 15px; }
-    .sentence-translation { font-size: 1.05rem; color: var(--accent); font-style: italic; margin-bottom: 15px; }
-    .input-row { display: flex; gap: 10px; margin-top: 15px; }
-    input[type="text"] { flex: 1; background: #29292e; border: 1px solid var(--border); color: #fff; padding: 12px; font-size: 1.1rem; border-radius: 4px; }
-    input[type="text"]:focus { border-color: var(--accent); outline: none; }
-    button { background: var(--accent); color: #121214; border: none; padding: 12px 24px; font-size: 1.1rem; font-weight: bold; border-radius: 4px; cursor: pointer; }
-    button:hover { background: var(--accent-hover); color: #fff; }
-    button.secondary { background: #29292e; color: #fff; border: 1px solid var(--border); }
-    button.secondary:hover { background: #3e3e46; }
-    .feedback { font-weight: bold; margin-top: 10px; font-size: 1.1rem; }
-    .feedback.correct { color: var(--right); }
-    .feedback.incorrect { color: var(--wrong); }
-    .stats-section { display: none; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 25px; text-align: center; margin-top: 25px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
-    .stat-box { background: #121214; padding: 15px; border-radius: 6px; border: 1px solid var(--border); }
-    .stat-val { font-size: 2rem; font-weight: bold; color: var(--accent); }
-    .stat-lbl { font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; }
-    .nav-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
-    select { background: #29292e; border: 1px solid var(--border); color: #fff; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hangman Verb Challenge</title>
+<style>
+  :root {
+    --navy: #1a3c6e;
+    --navy-dark: #0b2445;
+    --blue: #2060a0;
+    --purple: #8a2be2;
+    --green: #1a7f37;
+    --red: #c9211e;
+    --grey: #555555;
+    --light-grey: #c9c9c9;
+    --bg: #f4f6fb;
+    --card-bg: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+  .zh { font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "WenQuanYi Zen Hei", sans-serif; }
+ 
+  #app {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+ 
+  header.top {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  header.top h1 {
+    color: var(--navy);
+    font-size: 1.9rem;
+    margin: 0 0 4px;
+  }
+  header.top p.zh {
+    color: var(--grey);
+    margin: 0;
+    font-size: 1rem;
+  }
+ 
+  .screen { display: none; }
+  .screen.active { display: block; }
+ 
+  /* ---------- Start screen ---------- */
+  .level-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .level-card {
+    background: var(--card-bg);
+    border: 2px solid #e2e6ef;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+  }
+  .level-card:hover, .level-card:focus-visible {
+    border-color: var(--navy);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(26,60,110,0.15);
+  }
+  .level-card .badge {
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 999px;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  .level-card h3 { margin: 0 0 6px; font-size: 1.25rem; color: var(--navy-dark); }
+  .level-card p { margin: 4px 0; font-size: .92rem; color: var(--grey); line-height: 1.4; }
+  .level-card .count { font-size: .8rem; color: var(--light-grey); margin-top: 8px; }
+ 
+  .lvl-easy .badge { background: var(--green); }
+  .lvl-medium .badge { background: #b8860b; }
+  .lvl-hard .badge { background: var(--red); }
+ 
+  .intro-box {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 16px 20px;
+    border: 1px solid #e2e6ef;
+    font-size: .95rem;
+    line-height: 1.5;
+  }
+  .intro-box .zh { color: var(--grey); font-size: .9rem; margin-top: 6px; }
+  .intro-box .ai-note {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--light-grey);
+    color: var(--grey);
+    font-size: .85rem;
+  }
+ 
+  /* ---------- Game screen ---------- */
+  .game-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .game-topbar .pill {
+    background: var(--navy);
+    color: #fff;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: .85rem;
+    font-weight: 600;
+  }
+  .btn-link {
+    background: none;
+    border: none;
+    color: var(--blue);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: .9rem;
+    padding: 4px;
+  }
+ 
+  .game-panel {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid #e2e6ef;
+    padding: 22px;
+    min-height: 320px;
+  }
+  @media (max-width: 640px) {
+    .game-panel { grid-template-columns: 1fr; }
+  }
+ 
+  /* ---------- Loading / error overlay (shown while Gemini generates words) --- */
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.92);
+    border-radius: 16px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    z-index: 20;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 42px; height: 42px;
+    border: 4px solid #e2e6ef;
+    border-left-color: var(--navy);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin-bottom: 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-overlay .loading-text { color: var(--navy-dark); font-weight: 600; }
+  .loading-overlay .loading-sub { color: var(--grey); font-size: .85rem; margin-top: 4px; }
+  .loading-overlay .error-box { color: var(--red); font-weight: 600; max-width: 380px; }
+  .loading-overlay .error-detail { color: var(--grey); font-size: .82rem; margin: 8px 0 14px; max-width: 380px; }
+ 
+  .clue-col h2.hanzi { font-size: 2.4rem; margin: 0; color: #111; }
+  .clue-col .pinyin { color: var(--blue); font-style: italic; font-size: 1.05rem; margin: 2px 0 14px; }
+ 
+  .word-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0 6px;
+  }
+  .letter-box {
+    width: 34px;
+    height: 42px;
+    border-bottom: 3px solid var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-family: "Courier New", monospace;
+    color: var(--navy-dark);
+  }
+  .wrong-count { font-size: .85rem; color: var(--grey); margin-top: 6px; }
+ 
+  .gallows-wrap { display: flex; align-items: center; justify-content: center; }
+  #gallows-svg { width: 100%; max-width: 220px; height: auto; }
+  .part { opacity: 0; transition: opacity .25s ease; }
+  .part.show { opacity: 1; }
+ 
+  #keyboard {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 6px;
+    margin-top: 18px;
+  }
+  @media (max-width: 480px) {
+    #keyboard { grid-template-columns: repeat(7, 1fr); }
+  }
+  .key {
+    padding: 9px 0;
+    border-radius: 6px;
+    border: 1px solid #d3d9e6;
+    background: #fff;
+    font-weight: 700;
+    font-size: .95rem;
+    cursor: pointer;
+    color: #222;
+  }
+  .key:hover:not(:disabled) { background: #eef2ff; border-color: var(--navy); }
+  .key:disabled { cursor: default; opacity: .55; }
+  .key.correct { background: var(--green); color: #fff; border-color: var(--green); }
+  .key.wrong { background: #f2dede; color: var(--red); border-color: var(--red); }
+ 
+  .message-bar {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: .95rem;
+    display: none;
+  }
+  .message-bar.show { display: block; }
+  .message-bar.info { background: #eef2ff; color: var(--navy-dark); }
+  .message-bar.success { background: #e6f6ea; color: var(--green); }
+  .message-bar.fail { background: #fdeaea; color: var(--red); }
+ 
+  .sentence-box {
+    grid-column: 1 / -1;
+    border-top: 1px dashed var(--light-grey);
+    margin-top: 6px;
+    padding-top: 16px;
+  }
+  .tense-label {
+    display: inline-block;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--purple);
+    background: #f4ebfc;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .sentence-box .sentence { font-size: 1.05rem; line-height: 1.6; }
+  .sentence-box .sentence .blank-placeholder {
+    display: inline-block;
+    font-family: "Courier New", monospace;
+    font-weight: 700;
+    color: var(--light-grey);
+    letter-spacing: 2px;
+  }
+  .sentence-box .sentence input[type=text] {
+    font-family: "Courier New", monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    width: 150px;
+    border: 2px solid var(--navy);
+    border-radius: 6px;
+    text-align: center;
+  }
+  .filled-blank {
+    display: inline-block;
+    font-family: "Courier New", monospace;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--green);
+    border-bottom: 3px solid var(--green);
+    padding: 0 6px 1px;
+  }
+  .sentence-actions { margin-top: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+ 
+  button.primary {
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: .95rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button.primary:hover { background: var(--navy-dark); }
+  button.primary:disabled { opacity: .5; cursor: default; }
+  button.secondary {
+    background: #fff;
+    color: var(--navy);
+    border: 2px solid var(--navy);
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: .9rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+ 
+  /* ---------- Result screen ---------- */
+  .result-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid #e2e6ef;
+    padding: 30px;
+    text-align: center;
+  }
+  .result-card h2 { color: var(--navy); margin-top: 0; }
+  .stat-row { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin: 22px 0; }
+  .stat { min-width: 110px; }
+  .stat .num { font-size: 2rem; font-weight: 800; color: var(--navy); }
+  .stat .label { font-size: .82rem; color: var(--grey); }
+  .result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+ 
+  footer.credit {
+    text-align: center;
+    color: var(--light-grey);
+    font-size: .78rem;
+    margin-top: 40px;
+  }
+</style>
 </head>
 <body>
-
-  <h1>Mandarin Verb Hangman</h1>
-  <div class="subtitle">汉语动词大挑战</div>
-
-  <div class="intro">
-    You'll see the English meaning of a Mandarin verb. Guess its <strong>pinyin</strong> spelling one letter at a time — every wrong guess adds a piece to the hangman. Once you reveal the pinyin (or run out of guesses), read the sentence below — shown in characters (汉字) and in pinyin — then type the pinyin for the missing verb to complete it. Tone marks are optional; just spell it correctly.
-    <br><br>
-    Fun fact: Mandarin verbs never change form for tense! Instead, little words like 了 (le — completed action), 要 / 会 (yào / huì — going to), and time words like 昨天 (yesterday) or 明天 (tomorrow) show when something happens. Watch the purple badge above each sentence for the time cue being used.
-  </div>
-
-  <!-- Game Stage -->
-  <div class="game-container" id="game-stage">
-    <div class="loading-overlay" id="loading-screen">
-      <div class="spinner"></div>
-      <div id="loading-text">Generating Dynamic AI Context...</div>
+<div id="app">
+ 
+  <header class="top">
+    <h1>Hangman Verb Challenge</h1>
+    <p class="zh">猜词游戏 — 动词与简单时态</p>
+  </header>
+ 
+  <!-- START SCREEN -->
+  <section id="screen-start" class="screen active">
+    <div class="intro-box">
+      Read the Chinese clue and the sentence below it, then guess the English verb one letter at a time.
+      Every wrong guess adds a piece to the hangman. Solve the word, then type the verb form the sentence
+      calls for — past, present, or future — to finish the round.
+      <div class="zh">看汉语提示和下面的句子,一个字母一个字母猜出这个英语动词。每猜错一次,绞刑架就会多画一部分。
+      猜出单词后,再根据句子的时态(过去式、现在式或将来式)写出正确的动词形式,完成这一轮。</div>
+      <div class="ai-note">Every round is freshly generated by AI (Google Gemini), so the words and
+      sentences are different each time you play — nothing here is a fixed list.</div>
     </div>
-
-    <div class="meta-row">
-      <div id="word-counter">Word 1 of 5</div>
-      <div>
-        <span class="badge time-cue" id="time-badge">Loading...</span>
-        <select id="difficulty-select" onchange="changeDifficulty()">
-          <option value="easy" selected>Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
-        </select>
+ 
+    <div class="level-grid" id="level-grid"></div>
+  </section>
+ 
+  <!-- GAME SCREEN -->
+  <section id="screen-game" class="screen">
+    <div class="game-topbar">
+      <span class="pill" id="progress-pill">Word 1 of 8</span>
+      <span class="pill" id="level-pill">Easy</span>
+      <button class="btn-link" id="quit-btn">&larr; change difficulty</button>
+    </div>
+ 
+    <div class="game-panel">
+      <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner" id="spinner"></div>
+        <div class="loading-text" id="loading-text">Asking Gemini for new words&hellip;</div>
+        <div class="loading-sub">This usually takes a few seconds</div>
+      </div>
+ 
+      <div class="clue-col">
+        <h2 class="hanzi" id="clue-hanzi">成为</h2>
+        <div class="pinyin" id="clue-pinyin">(chéng wéi)</div>
+ 
+        <div class="word-display" id="word-display"></div>
+        <div class="wrong-count" id="wrong-count">Wrong guesses: 0 / 6</div>
+ 
+        <div id="keyboard"></div>
+ 
+        <div class="message-bar" id="message-bar"></div>
+      </div>
+ 
+      <div class="gallows-wrap">
+        <svg id="gallows-svg" viewBox="0 0 200 220">
+          <line x1="15" y1="205" x2="120" y2="205" stroke="#1a3c6e" stroke-width="6" stroke-linecap="round"/>
+          <line x1="45" y1="205" x2="45" y2="15" stroke="#1a3c6e" stroke-width="6" stroke-linecap="round"/>
+          <line x1="45" y1="15" x2="130" y2="15" stroke="#1a3c6e" stroke-width="6" stroke-linecap="round"/>
+          <line x1="130" y1="15" x2="130" y2="38" stroke="#1a3c6e" stroke-width="4"/>
+          <circle class="part" id="part-1" cx="130" cy="55" r="16" fill="none" stroke="#0b2445" stroke-width="4"/>
+          <line class="part" id="part-2" x1="130" y1="71" x2="130" y2="130" stroke="#0b2445" stroke-width="4"/>
+          <line class="part" id="part-3" x1="130" y1="85" x2="104" y2="110" stroke="#0b2445" stroke-width="4" stroke-linecap="round"/>
+          <line class="part" id="part-4" x1="130" y1="85" x2="156" y2="110" stroke="#0b2445" stroke-width="4" stroke-linecap="round"/>
+          <line class="part" id="part-5" x1="130" y1="130" x2="108" y2="162" stroke="#0b2445" stroke-width="4" stroke-linecap="round"/>
+          <line class="part" id="part-6" x1="130" y1="130" x2="152" y2="162" stroke="#0b2445" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      </div>
+ 
+      <div class="sentence-box" id="sentence-box">
+        <div class="tense-label" id="tense-label"></div>
+        <div class="sentence" id="sentence-text"></div>
+        <div class="sentence-actions">
+          <button class="primary" id="check-sentence-btn" style="display:none;">Check</button>
+          <button class="secondary" id="reveal-answer-btn" style="display:none;">Show answer</button>
+          <button class="primary" id="next-word-btn" style="display:none;">Next word &rarr;</button>
+        </div>
       </div>
     </div>
-
-    <div class="english-meaning" id="english-meaning">...</div>
-    <div class="word-blanks" id="word-blanks">_ _ _ _</div>
-
-    <div class="wrong-guesses">
-      Wrong guesses: <span id="wrong-count">0</span> / 6 
-      <span class="wrong-letters" id="wrong-letters"></span>
-    </div>
-
-    <div class="keyboard" id="keyboard"></div>
-
-    <div class="nav-buttons">
-      <button class="secondary" id="show-answer-btn" onclick="showAnswer()">Show answer</button>
-      <button id="next-word-btn" onclick="nextWord()" style="display:none;">Next word &rarr;</button>
-    </div>
-
-    <!-- Sentence Completion Phase -->
-    <div class="sentence-section" id="sentence-section">
-      <h3>Complete the Sentence:</h3>
-      <div class="sentence-line" id="sentence-hz">...</div>
-      <div class="sentence-pinyin" id="sentence-py">...</div>
-      <div class="sentence-translation" id="sentence-en">...</div>
-
-      <div class="input-row" id="input-container">
-        <input type="text" id="verb-input" placeholder="Type target pinyin (e.g. xihuan)" autocomplete="off">
-        <button id="submit-guess-btn" onclick="checkSentenceGuess()">Check</button>
+  </section>
+ 
+  <!-- RESULT SCREEN -->
+  <section id="screen-result" class="screen">
+    <div class="result-card">
+      <h2>Round complete! 完成!</h2>
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="stat-solved">0/0</div><div class="label">Words guessed</div></div>
+        <div class="stat"><div class="num" id="stat-perfect">0</div><div class="label">Perfect sentences (1st try)</div></div>
+        <div class="stat"><div class="num" id="stat-losses">0</div><div class="label">Times hangman finished</div></div>
       </div>
-      <div class="feedback" id="sentence-feedback"></div>
-    </div>
-  </div>
-
-  <!-- Score/Round Complete Stage -->
-  <div class="stats-section" id="stats-stage">
-    <h2>Round Complete! 完成!</h2>
-    <div class="stats-grid">
-      <div class="stat-box">
-        <div class="stat-val" id="stat-words">0/5</div>
-        <div class="stat-lbl">Words guessed</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-val" id="stat-perfect">0</div>
-        <div class="stat-lbl">Perfect sentences (1st try)</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-val" id="stat-hangman">0</div>
-        <div class="stat-lbl">Times hangman finished</div>
+      <div class="result-actions">
+        <button class="primary" id="replay-btn">Play this level again (new AI words)</button>
+        <button class="secondary" id="menu-btn">Choose a different level</button>
       </div>
     </div>
-    <div class="nav-buttons">
-      <button onclick="restartRound()">Play this level again</button>
-    </div>
-  </div>
-
-  <div style="text-align: center; margin-top: 30px; color: var(--text-muted); font-size: 0.85rem;">
-    Mandarin Verb Hangman · Powered Dynamically by Google Gemini & Cloudflare Workers
-  </div>
-
-  <script>
-    // --- CONFIGURATION ---
-    // PASTE YOUR CLOUDFLARE WORKER ROUTE IN THE QUOTES BELOW:
-    // const WORKER_URL = "https://hangman.your-subdomain.workers.dev";
-       const WORKER_URL = "https://hangman.lingoer.workers.dev";
-
-    // --- GAME STATE VARIABLES ---
-    let currentDifficulty = "easy";
-    let roundWords = [];
-    let currentIdx = 0;
-
-    let targetPinyinClean = ""; // e.g. "xihuan"
-    let targetPinyinDisplay = ""; // e.g. "xǐhuan"
-    let guessedLetters = new Set();
-    let wrongCount = 0;
-    const maxWrong = 6;
-    let hangmanFinishedThisRound = false;
-
-    // Scoring metrics
-    let scoreWordsGuessed = 0;
-    let scorePerfectSentences = 0;
-    let scoreHangmanFinished = 0;
-    let sentenceFirstTry = true;
-
-    // --- INITIALIZATION ---
-    window.addEventListener('DOMContentLoaded', () => {
-      buildKeyboard();
-      startNewRound();
+  </section>
+ 
+  <footer class="credit">Hangman Verb Challenge · words generated live by Google Gemini via a Cloudflare Worker</footer>
+</div>
+ 
+<script>
+/* =========================================================================
+   CONFIGURATION — point this at your Cloudflare Worker.
+   ========================================================================= */
+const WORKER_URL = "https://hangman.lingoer.workers.dev";
+const ROUND_SIZE = 8;      // how many words Gemini generates per round
+const FETCH_TIMEOUT_MS = 25000;
+ 
+/* ============================= LEVEL META =============================
+   promptHint feeds Gemini's instructions; label/desc/zh/badge/cls drive
+   the level-select cards. No static word lists — every round is generated
+   on demand.
+======================================================================== */
+const LEVEL_META = {
+  easy: {
+    label: "Easy", badge: "Level 1", cls: "lvl-easy",
+    desc: "2-syllable verbs, regular past tense — just add “-ed”.",
+    zh: "双音节动词,规则过去式(加 -ed)。",
+    promptHint: "2-syllable verbs with regular past tense forms (simply add \"-ed\")",
+  },
+  medium: {
+    label: "Medium", badge: "Level 2", cls: "lvl-medium",
+    desc: "2-syllable verbs, irregular past tense — no easy pattern.",
+    zh: "双音节动词,不规则过去式,没有固定规律。",
+    promptHint: "2-syllable verbs with irregular past tense forms (no simple pattern, e.g. \"begin\" -> \"began\")",
+  },
+  hard: {
+    label: "Hard", badge: "Level 3", cls: "lvl-hard",
+    desc: "3-syllable verbs, a mix of regular and irregular forms.",
+    zh: "三音节动词,规则与不规则混合。",
+    promptHint: "3-syllable verbs, with a mix of regular and irregular forms",
+  },
+};
+ 
+const TENSE_LABEL = {
+  past:    "simple past",
+  present: "simple present",
+  future:  "simple future",
+};
+ 
+const RESPONSE_SCHEMA = {
+  type: "ARRAY",
+  items: {
+    type: "OBJECT",
+    properties: {
+      en:       { type: "STRING" },
+      answer:   { type: "STRING" },
+      tense:    { type: "STRING", enum: ["past", "present", "future"] },
+      hz:       { type: "STRING" },
+      py:       { type: "STRING" },
+      sentence: { type: "STRING" },
+    },
+    required: ["en", "answer", "tense", "hz", "py", "sentence"],
+  },
+};
+ 
+const MAX_WRONG = 6;
+ 
+/* ============================= STATE ============================= */
+let state = {
+  level: null,
+  queue: [],
+  index: 0,
+  current: null,
+  guessed: new Set(),
+  wrong: 0,
+  wordSolved: false,
+  sentenceAttempts: 0,
+  stats: { solved: 0, perfect: 0, losses: 0, total: 0 },
+};
+ 
+/* ============================= DOM refs ============================= */
+const screens = {
+  start: document.getElementById('screen-start'),
+  game: document.getElementById('screen-game'),
+  result: document.getElementById('screen-result'),
+};
+const levelGrid = document.getElementById('level-grid');
+const progressPill = document.getElementById('progress-pill');
+const levelPill = document.getElementById('level-pill');
+const clueHanzi = document.getElementById('clue-hanzi');
+const cluePinyin = document.getElementById('clue-pinyin');
+const wordDisplay = document.getElementById('word-display');
+const wrongCountEl = document.getElementById('wrong-count');
+const keyboardEl = document.getElementById('keyboard');
+const messageBar = document.getElementById('message-bar');
+const sentenceBox = document.getElementById('sentence-box');
+const sentenceText = document.getElementById('sentence-text');
+const tenseLabel = document.getElementById('tense-label');
+const checkSentenceBtn = document.getElementById('check-sentence-btn');
+const revealAnswerBtn = document.getElementById('reveal-answer-btn');
+const nextWordBtn = document.getElementById('next-word-btn');
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingText = document.getElementById('loading-text');
+const gamePanel = document.querySelector('.game-panel');
+ 
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  screens[name].classList.add('active');
+}
+ 
+/* ============================= Build start screen ============================= */
+function buildLevelGrid() {
+  levelGrid.innerHTML = '';
+  Object.keys(LEVEL_META).forEach(key => {
+    const meta = LEVEL_META[key];
+    const card = document.createElement('div');
+    card.className = `level-card ${meta.cls}`;
+    card.tabIndex = 0;
+    card.innerHTML = `
+      <span class="badge">${meta.badge}</span>
+      <h3>${meta.label}</h3>
+      <p>${meta.desc}</p>
+      <p class="zh">${meta.zh}</p>
+      <div class="count">${ROUND_SIZE} AI-generated words this round</div>
+    `;
+    card.addEventListener('click', () => startLevel(key));
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') startLevel(key); });
+    levelGrid.appendChild(card);
+  });
+}
+ 
+/* ============================= Gemini fetch ============================= */
+function buildPrompt(level) {
+  const meta = LEVEL_META[level];
+  return `Generate exactly ${ROUND_SIZE} distinct English verbs for a Hangman-style vocabulary and
+simple-tense practice game aimed at a Chinese-speaking English learner, at "${level}" difficulty:
+${meta.promptHint}.
+ 
+Mix the grammatical tense required across the set — roughly a third simple past, a third simple
+present, a third simple future — so not every verb uses the same tense. Do not repeat a verb.
+ 
+For each verb, produce an object with exactly these fields:
+{
+  "en": "the base/infinitive form of the verb, lowercase, no 'to'",
+  "answer": "the exact form of the verb that correctly completes the sentence below, matching the required tense (e.g. 'promised', 'promises', or 'will promise')",
+  "tense": "one of: past, present, future — matching the form used in \\"answer\\"",
+  "hz": "a short Mandarin Chinese translation of the verb's meaning, in simplified characters",
+  "py": "the Hanyu Pinyin for hz, with tone marks",
+  "sentence": "a natural English example sentence using the verb, with the target word replaced by exactly three underscores ___ (do not use the verb anywhere else in the sentence)"
+}
+ 
+Return strictly a raw JSON array of ${ROUND_SIZE} such objects and nothing else — no markdown fences, no commentary.`;
+}
+ 
+function normalizeItem(raw) {
+  const tense = ['past', 'present', 'future'].includes(raw.tense) ? raw.tense : 'past';
+  const sentence = (typeof raw.sentence === 'string' && raw.sentence.includes('___'))
+    ? raw.sentence
+    : `${(raw.sentence || '').trim()} ___.`.trim();
+  return {
+    en: String(raw.en || '').toLowerCase().replace(/[^a-z]/g, ''),
+    answer: String(raw.answer || '').trim(),
+    tense,
+    hz: String(raw.hz || '').trim(),
+    py: String(raw.py || '').trim(),
+    sentence,
+  };
+}
+ 
+async function fetchRound(level) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: buildPrompt(level), schema: RESPONSE_SCHEMA }),
+      signal: controller.signal,
     });
-
-    function buildKeyboard() {
-      const keyboardDiv = document.getElementById('keyboard');
-      keyboardDiv.innerHTML = '';
-      const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
-      letters.forEach(letter => {
-        const btn = document.createElement('button');
-        btn.textContent = letter;
-        btn.className = 'key';
-        btn.id = `key-${letter}`;
-        btn.onclick = () => makeLetterGuess(letter);
-        keyboardDiv.appendChild(btn);
-      });
+    clearTimeout(timeout);
+ 
+    const text = await res.text();
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (e) {
+      throw new Error('The AI response was not valid JSON.');
     }
-
-    // --- API CONNECTIVITY (THE DYNAMIC ENGINE) ---
-        async function startNewRound() {
-      document.getElementById('game-stage').style.display = 'block';
-      document.getElementById('stats-stage').style.display = 'none';
-      
-      currentIdx = 0;
-      scoreWordsGuessed = 0;
-      scorePerfectSentences = 0;
-      scoreHangmanFinished = 0;
-
-      // Show the application loading wrapper
-      const loader = document.getElementById('loading-screen');
-      loader.style.display = 'flex';
-
-      const promptText = `Generate exactly 5 distinct Mandarin Chinese verbs suited for an educational language game set at "${currentDifficulty}" level. 
-      For each item, alternate or mix grammatical time structures (e.g. past action with 了, present habitual, future intention with 要 or 会).
-      Each object in the array MUST strictly follow this JSON layout:
-      {
-        "english": "The English infinitive meaning of the verb",
-        "pinyin_clean": "Plain english characters with NO tone marks or spaces used for hangman typing matching standard raw inputs",
-        "pinyin_toned": "Proper pinyin string containing correct tone marks",
-        "time_cue": "Short description of the tense mechanism used (e.g., Past (了), Future (要), Habitual)",
-        "sentence_hz": "The complete Chinese character example sentence using the verb",
-        "sentence_py": "The complete pinyin breakdown of the sentence",
-        "sentence_en": "The clear English translation translation of the sentence"
-      }
-      Return the output strictly as a raw, valid JSON array containing nothing else. Do not wrap it in markdown code fences.`;
-
-      try {
-        const response = await fetch(WORKER_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: promptText })
-        });
-
-        if (!response.ok) throw new Error("Worker responded with an error code status");
-
-        const data = await response.json();
-        let finalArray;
-        
-        // 1. Process data format dynamically based on what the worker sent back
-        if (typeof data === "object") {
-          finalArray = data;
-        } else {
-          let cleanText = data.replace(/```json/g, "").replace(/```/g, "").trim();
-          finalArray = JSON.parse(cleanText);
-        }
-        
-        // 2. Extract deep content parameters if the standard wrapper structure is present
-        if (finalArray.candidates && finalArray.candidates[0]?.content?.parts[0]?.text) {
-          let innerText = finalArray.candidates[0].content.parts[0].text;
-          innerText = innerText.replace(/```json/g, "").replace(/```/g, "").trim();
-          roundWords = JSON.parse(innerText);
-        } else if (finalArray.candidates && finalArray.candidates.content?.parts?.text) {
-          let innerText = finalArray.candidates.content.parts.text;
-          innerText = innerText.replace(/```json/g, "").replace(/```/g, "").trim();
-          roundWords = JSON.parse(innerText);
-        } else {
-          roundWords = finalArray;
-        }
-
-        // 3. Close the loading window and activate the main stage
-        loader.style.display = 'none';
-        loadWordInstance();
-
-      } catch (err) {
-        console.error("Failed to build dynamic list:", err);
-        alert("Unable to fetch dynamic words from Cloudflare Worker. Please check that your API key is correctly configured and CORS headers are allowed.");
-        loader.style.display = 'none';
-      }
+ 
+    if (parsed && parsed.error) {
+      throw new Error(parsed.error);
     }
-
-    // --- GAME ROUND LOGIC ---
-    function loadWordInstance() {
-      if (!roundWords || roundWords.length === 0) return;
-
-      const currentItem = roundWords[currentIdx];
-
-      // Setup state variables
-      targetPinyinClean = currentItem.pinyin_clean.toLowerCase().replace(/[^a-z]/g, '');
-      targetPinyinDisplay = currentItem.pinyin_toned;
-      guessedLetters.clear();
-      wrongCount = 0;
-      hangmanFinishedThisRound = false;
-      sentenceFirstTry = true;
-
-      // Update basic visual elements
-      document.getElementById('word-counter').textContent = `Word ${currentIdx + 1} of ${roundWords.length}`;
-      document.getElementById('time-badge').textContent = currentItem.time_cue;
-      document.getElementById('english-meaning').textContent = currentItem.english;
-      document.getElementById('wrong-count').textContent = '0';
-      document.getElementById('wrong-letters').textContent = '';
-
-      // Hide intermediate validation forms
-      document.getElementById('sentence-section').style.display = 'none';
-      document.getElementById('next-word-btn').style.display = 'none';
-      document.getElementById('show-answer-btn').style.display = 'inline-block';
-      document.getElementById('verb-input').value = '';
-      document.getElementById('sentence-feedback').className = 'feedback';
-      document.getElementById('sentence-feedback').textContent = '';
-
-      // Reset interaction keys
-      const keys = document.querySelectorAll('.keyboard .key');
-      keys.forEach(k => {
-        k.disabled = false;
-        k.style.background = '';
-      });
-
-      renderBlanks();
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('The AI response was empty or not a list of words.');
     }
-
-    function renderBlanks() {
-      let displayStr = "";
-      let allSolved = true;
-
-      for (let char of targetPinyinClean) {
-        if (guessedLetters.has(char)) {
-          displayStr += char + " ";
-        } else {
-          displayStr += "_ ";
-          allSolved = false;
-        }
-      }
-
-      document.getElementById('word-blanks').textContent = displayStr.trim();
-
-      if (allSolved && targetPinyinClean.length > 0) {
-        revealSentencePhase(true);
-      }
+ 
+    const items = parsed.map(normalizeItem).filter(item => item.en && item.answer && item.sentence.includes('___'));
+    if (items.length === 0) {
+      throw new Error('None of the generated words had all the required fields.');
     }
-
-    function makeLetterGuess(letter) {
-      if (guessedLetters.has(letter) || wrongCount >= maxWrong || hangmanFinishedThisRound) return;
-
-      guessedLetters.add(letter);
-      document.getElementById(`key-${letter}`).disabled = true;
-
-      if (targetPinyinClean.includes(letter)) {
-        document.getElementById(`key-${letter}`).style.background = 'var(--right)';
-        renderBlanks();
-      } else {
-        document.getElementById(`key-${letter}`).style.background = 'var(--wrong)';
-        wrongCount++;
-        document.getElementById('wrong-count').textContent = wrongCount;
-
-        // Show wrong letters list
-        const wrongArr = Array.from(guessedLetters).filter(l => !targetPinyinClean.includes(l));
-        document.getElementById('wrong-letters').textContent = ` (${wrongArr.join(', ').toUpperCase()})`;
-
-        if (wrongCount >= maxWrong) {
-          scoreHangmanFinished++;
-          hangmanFinishedThisRound = true;
-          revealSentencePhase(false);
-        }
-      }
+    return items;
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') {
+      throw new Error('Gemini took too long to respond. Please try again.');
     }
-
-    // Capture physical key presses for desktop support
-    window.addEventListener('keydown', (e) => {
-      if (document.getElementById('loading-screen').style.display === 'flex') return;
-      if (document.getElementById('sentence-section').style.display === 'block') return;
-
-      const key = e.key.toLowerCase();
-      if (/^[a-z]$/.test(key)) {
-        const btn = document.getElementById(`key-${key}`);
-        if (btn && !btn.disabled) {
-          makeLetterGuess(key);
-        }
-      }
-    });
-
-    function showAnswer() {
-      // Reveal the target word letters automatically
-      for (let char of targetPinyinClean) {
-        guessedLetters.add(char);
-      }
-      renderBlanks();
-      revealSentencePhase(false);
+    throw err;
+  }
+}
+ 
+function showLoading() {
+  loadingText.textContent = 'Asking Gemini for new words…';
+  loadingOverlay.innerHTML = `
+    <div class="spinner" id="spinner"></div>
+    <div class="loading-text" id="loading-text">Asking Gemini for new words&hellip;</div>
+    <div class="loading-sub">This usually takes a few seconds</div>
+  `;
+  loadingOverlay.classList.add('show');
+}
+ 
+function showLoadingError(level, message) {
+  loadingOverlay.innerHTML = `
+    <div class="error-box">Couldn't generate new words</div>
+    <div class="error-detail">${message}</div>
+    <button class="primary" id="retry-fetch-btn">Try again</button>
+  `;
+  document.getElementById('retry-fetch-btn').addEventListener('click', () => startLevel(level));
+}
+ 
+function hideLoading() {
+  loadingOverlay.classList.remove('show');
+}
+ 
+/* ============================= Game flow ============================= */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+ 
+async function startLevel(key) {
+  state.level = key;
+  levelPill.textContent = LEVEL_META[key].label;
+  showScreen('game');
+  showLoading();
+ 
+  try {
+    const items = await fetchRound(key);
+    state.queue = shuffle(items);
+    state.index = 0;
+    state.stats = { solved: 0, perfect: 0, losses: 0, total: state.queue.length };
+    hideLoading();
+    loadWord();
+  } catch (err) {
+    showLoadingError(key, err.message || String(err));
+  }
+}
+ 
+function loadWord() {
+  state.current = state.queue[state.index];
+  state.guessed = new Set();
+  state.wrong = 0;
+  state.wordSolved = false;
+  state.sentenceAttempts = 0;
+ 
+  progressPill.textContent = `Word ${state.index + 1} of ${state.queue.length}`;
+  clueHanzi.textContent = state.current.hz;
+  cluePinyin.textContent = `(${state.current.py})`;
+ 
+  document.querySelectorAll('.part').forEach(p => p.classList.remove('show'));
+  wrongCountEl.textContent = `Wrong guesses: 0 / ${MAX_WRONG}`;
+  hideMessage();
+ 
+  nextWordBtn.style.display = 'none';
+  revealAnswerBtn.style.display = 'none';
+  checkSentenceBtn.disabled = false;
+  checkSentenceBtn.style.display = 'none';
+ 
+  renderWordDisplay();
+  buildKeyboard();
+  renderSentenceStatic();
+}
+ 
+function renderWordDisplay() {
+  wordDisplay.innerHTML = '';
+  const word = state.current.en;
+  for (const ch of word) {
+    const box = document.createElement('div');
+    box.className = 'letter-box';
+    box.textContent = state.guessed.has(ch) ? ch.toUpperCase() : '';
+    wordDisplay.appendChild(box);
+  }
+}
+ 
+function buildKeyboard() {
+  keyboardEl.innerHTML = '';
+  'abcdefghijklmnopqrstuvwxyz'.split('').forEach(letter => {
+    const btn = document.createElement('button');
+    btn.className = 'key';
+    btn.textContent = letter.toUpperCase();
+    btn.addEventListener('click', () => handleGuess(letter));
+    keyboardEl.appendChild(btn);
+  });
+}
+ 
+function handleGuess(letter) {
+  if (state.wordSolved || state.wrong >= MAX_WRONG) return;
+  if (state.guessed.has(letter)) return;
+  state.guessed.add(letter);
+ 
+  const buttons = keyboardEl.querySelectorAll('.key');
+  const idx = letter.charCodeAt(0) - 97;
+  const btn = buttons[idx];
+ 
+  if (state.current.en.includes(letter)) {
+    btn.classList.add('correct');
+    btn.disabled = true;
+    renderWordDisplay();
+    checkWordSolved();
+  } else {
+    btn.classList.add('wrong');
+    btn.disabled = true;
+    state.wrong++;
+    document.getElementById(`part-${state.wrong}`).classList.add('show');
+    wrongCountEl.textContent = `Wrong guesses: ${state.wrong} / ${MAX_WRONG}`;
+    if (state.wrong >= MAX_WRONG) {
+      loseWord();
     }
-
-    function revealSentencePhase(guessedSuccessfully) {
-      // Disable all interaction buttons on the letter grid
-      const keys = document.querySelectorAll('.keyboard .key');
-      keys.forEach(k => k.disabled = true);
-      document.getElementById('show-answer-btn').style.display = 'none';
-
-      // Inject content data to target nodes
-      const currentItem = roundWords[currentIdx];
-      document.getElementById('sentence-hz').textContent = currentItem.sentence_hz;
-      document.getElementById('sentence-py').textContent = currentItem.sentence_py;
-      document.getElementById('sentence-en').textContent = currentItem.sentence_en;
-
-      // Update header blanks with styled answer text
-      document.getElementById('word-blanks').textContent = targetPinyinDisplay;
-
-      // Reveal sentence component container
-      document.getElementById('sentence-section').style.display = 'block';
-      document.getElementById('verb-input').focus();
-    }
-
-    function checkSentenceGuess() {
-      const userRawInput = document.getElementById('verb-input').value.trim().toLowerCase();
-      // Remove basic spacing elements or digits to accept soft typos safely
-      const cleanInput = userRawInput.replace(/[^a-z]/g, '');
-      const feedbackDiv = document.getElementById('sentence-feedback');
-
-      if (cleanInput === targetPinyinClean) {
-        feedbackDiv.textContent = "Correct! 太棒了!";
-        feedbackDiv.className = "feedback correct";
-
-        scoreWordsGuessed++;
-        if (sentenceFirstTry) {
-          scorePerfectSentences++;
-        }
-
-        // Lock form interaction states
-        document.getElementById('next-word-btn').style.display = 'inline-block';
-      } else {
-        feedbackDiv.textContent = "Incorrect spelling. Try checking standard pinyin layouts again.";
-        feedbackDiv.className = "feedback incorrect";
-        sentenceFirstTry = false;
-      }
-    }
-
-    function nextWord() {
-      currentIdx++;
-      if (currentIdx < roundWords.length) {
-        loadWordInstance();
-      } else {
-        showFinalStatsRound();
-      }
-    }
-
-    function showFinalStatsRound() {
-      document.getElementById('game-stage').style.display = 'none';
-      document.getElementById('stats-stage').style.display = 'block';
-
-      document.getElementById('stat-words').textContent = `${scoreWordsGuessed}/${roundWords.length}`;
-      document.getElementById('stat-perfect').textContent = scorePerfectSentences;
-      document.getElementById('stat-hangman').textContent = scoreHangmanFinished;
-    }
-
-    function changeDifficulty() {
-      currentDifficulty = document.getElementById('difficulty-select').value;
-      startNewRound();
-    }
-
-    function restartRound() {
-      startNewRound();
-    }
-  </script>
+  }
+}
+ 
+function checkWordSolved() {
+  const word = state.current.en;
+  const solved = [...word].every(ch => state.guessed.has(ch));
+  if (solved) {
+    state.wordSolved = true;
+    state.stats.solved++;
+    disableKeyboard();
+    showMessage('success', `Well done — the word was "${word}"! Say it out loud, then complete the sentence below.`);
+    openSentenceStage();
+  }
+}
+ 
+function loseWord() {
+  state.stats.losses++;
+  disableKeyboard();
+  showMessage('fail', `Out of guesses — the word was "${state.current.en}". Say it out loud, then try the sentence below.`);
+  openSentenceStage();
+}
+ 
+function disableKeyboard() {
+  keyboardEl.querySelectorAll('.key').forEach(b => b.disabled = true);
+}
+ 
+// Shown from the moment a word loads: the sentence is visible right away
+// (as context/a clue while guessing), but the blank is just a placeholder —
+// it only turns into a real input once the hangman word is solved or lost.
+function renderSentenceStatic() {
+  tenseLabel.textContent = TENSE_LABEL[state.current.tense] || '';
+  const [before, after] = state.current.sentence.split('___');
+  const placeholderWidth = Math.max(state.current.answer.replace(/^will /, '').length, 6);
+  sentenceText.innerHTML =
+    `${before}<span class="blank-placeholder">${'_'.repeat(placeholderWidth)}</span>${after ?? ''}`;
+}
+ 
+function openSentenceStage() {
+  const [before, after] = state.current.sentence.split('___');
+  sentenceText.innerHTML = `${before}<input type="text" id="past-input" autocomplete="off" spellcheck="false">${after ?? ''}`;
+  document.getElementById('past-input').focus();
+  checkSentenceBtn.style.display = 'inline-block';
+}
+ 
+function checkSentence() {
+  const input = document.getElementById('past-input');
+  const val = input.value.trim().toLowerCase();
+  state.sentenceAttempts++;
+  if (val === state.current.answer.toLowerCase()) {
+    if (state.sentenceAttempts === 1) state.stats.perfect++;
+    showMessage('success', `Correct — "${state.current.answer}". Great work!`);
+    fillBlank(state.current.answer);
+    checkSentenceBtn.style.display = 'none';
+    revealAnswerBtn.style.display = 'none';
+    nextWordBtn.style.display = 'inline-block';
+  } else {
+    input.style.borderColor = 'var(--red)';
+    showMessage('fail', 'Not quite — check the spelling and verb tense, then try again.');
+    if (state.sentenceAttempts >= 2) revealAnswerBtn.style.display = 'inline-block';
+  }
+}
+ 
+function revealAnswer() {
+  showMessage('info', `The answer is "${state.current.answer}".`);
+  fillBlank(state.current.answer);
+  checkSentenceBtn.style.display = 'none';
+  revealAnswerBtn.style.display = 'none';
+  nextWordBtn.style.display = 'inline-block';
+}
+ 
+// Replaces the sentence's text input with the solved word, styled like a
+// completed fill-in-the-blank rather than an editable field.
+function fillBlank(word) {
+  const input = document.getElementById('past-input');
+  if (!input) return;
+  const span = document.createElement('span');
+  span.className = 'filled-blank';
+  span.textContent = word;
+  input.replaceWith(span);
+}
+ 
+function nextWord() {
+  state.index++;
+  if (state.index >= state.queue.length) {
+    showResults();
+  } else {
+    loadWord();
+  }
+}
+ 
+function showMessage(kind, text) {
+  messageBar.className = `message-bar show ${kind}`;
+  messageBar.textContent = text;
+}
+function hideMessage() {
+  messageBar.className = 'message-bar';
+  messageBar.textContent = '';
+}
+ 
+function showResults() {
+  document.getElementById('stat-solved').textContent = `${state.stats.solved}/${state.stats.total}`;
+  document.getElementById('stat-perfect').textContent = state.stats.perfect;
+  document.getElementById('stat-losses').textContent = state.stats.losses;
+  showScreen('result');
+}
+ 
+/* ============================= Wire up events ============================= */
+checkSentenceBtn.addEventListener('click', checkSentence);
+revealAnswerBtn.addEventListener('click', revealAnswer);
+nextWordBtn.addEventListener('click', nextWord);
+document.getElementById('quit-btn').addEventListener('click', () => showScreen('start'));
+document.getElementById('replay-btn').addEventListener('click', () => startLevel(state.level));
+document.getElementById('menu-btn').addEventListener('click', () => showScreen('start'));
+ 
+document.getElementById('sentence-box').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && checkSentenceBtn.style.display !== 'none') checkSentence();
+});
+ 
+window.addEventListener('keydown', e => {
+  if (!screens.game.classList.contains('active')) return;
+  if (document.activeElement && document.activeElement.id === 'past-input') return;
+  const letter = e.key.toLowerCase();
+  if (letter.length === 1 && letter >= 'a' && letter <= 'z') {
+    handleGuess(letter);
+  }
+});
+ 
+buildLevelGrid();
+</script>
 </body>
 </html>
