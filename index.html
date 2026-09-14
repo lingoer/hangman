@@ -99,7 +99,7 @@
 
     <div class="english-meaning" id="english-meaning">...</div>
     <div class="word-blanks" id="word-blanks">_ _ _ _</div>
-    
+
     <div class="wrong-guesses">
       Wrong guesses: <span id="wrong-count">0</span> / 6 
       <span class="wrong-letters" id="wrong-letters"></span>
@@ -118,7 +118,7 @@
       <div class="sentence-line" id="sentence-hz">...</div>
       <div class="sentence-pinyin" id="sentence-py">...</div>
       <div class="sentence-translation" id="sentence-en">...</div>
-      
+
       <div class="input-row" id="input-container">
         <input type="text" id="verb-input" placeholder="Type target pinyin (e.g. xihuan)" autocomplete="off">
         <button id="submit-guess-btn" onclick="checkSentenceGuess()">Check</button>
@@ -158,12 +158,12 @@
     // PASTE YOUR CLOUDFLARE WORKER ROUTE IN THE QUOTES BELOW:
     // const WORKER_URL = "https://hangman.your-subdomain.workers.dev";
        const WORKER_URL = "https://hangman.lingoer.workers.dev";
-    
+
     // --- GAME STATE VARIABLES ---
     let currentDifficulty = "easy";
     let roundWords = [];
     let currentIdx = 0;
-    
+
     let targetPinyinClean = ""; // e.g. "xihuan"
     let targetPinyinDisplay = ""; // e.g. "xǐhuan"
     let guessedLetters = new Set();
@@ -198,7 +198,7 @@
     }
 
     // --- API CONNECTIVITY (THE DYNAMIC ENGINE) ---
-    async function startNewRound() {
+        async function startNewRound() {
       document.getElementById('game-stage').style.display = 'block';
       document.getElementById('stats-stage').style.display = 'none';
       
@@ -235,51 +235,22 @@
         if (!response.ok) throw new Error("Worker responded with an error code status");
 
         const data = await response.json();
+        let finalArray;
         
-        // Extract content depending on how your Worker passes back the Gemini output
-        // let rawText = "";
-        // if (data.candidates && data.candidates.content.parts.text) {
-        //   rawText = data.candidates.content.parts.text;
-        //  } else {
-        //   rawText = data; // Fallback structure configuration
-        //  }
-
-        // Extract content depending on how your Worker passes back the Gemini output
-                let finalArray;
-        
-        // If data is already an array or object from the worker, use it directly
+        // 1. Process data format dynamically based on what the worker sent back
         if (typeof data === "object") {
           finalArray = data;
         } else {
-          // If it's a string, clean it and parse it
           let cleanText = data.replace(/```json/g, "").replace(/```/g, "").trim();
           finalArray = JSON.parse(cleanText);
         }
         
-        // Extract from candidates object if it's still wrapped in the raw Gemini structure
+        // 2. Extract deep content parameters if the standard wrapper structure is present
         if (finalArray.candidates && finalArray.candidates[0]?.content?.parts[0]?.text) {
           let innerText = finalArray.candidates[0].content.parts[0].text;
           innerText = innerText.replace(/```json/g, "").replace(/```/g, "").trim();
           roundWords = JSON.parse(innerText);
-        } else {
-          roundWords = finalArray;
-        }
-
-
-        // Clean any code block backticks if Gemini accidentally included them
-              let finalArray;
-        
-        // If data is already an array or object from the worker, use it directly
-        if (typeof data === "object") {
-          finalArray = data;
-        } else {
-          // If it's a string, clean it and parse it
-          let cleanText = data.replace(/```json/g, "").replace(/```/g, "").trim();
-          finalArray = JSON.parse(cleanText);
-        }
-        
-        // Extract from candidates object if it's still wrapped in the raw Gemini structure
-        if (finalArray.candidates && finalArray.candidates?.content?.parts?.text) {
+        } else if (finalArray.candidates && finalArray.candidates.content?.parts?.text) {
           let innerText = finalArray.candidates.content.parts.text;
           innerText = innerText.replace(/```json/g, "").replace(/```/g, "").trim();
           roundWords = JSON.parse(innerText);
@@ -287,10 +258,9 @@
           roundWords = finalArray;
         }
 
-        // --- THIS IS THE ONLY THING THAT SHOULD BE LEFT AT THE END ---
+        // 3. Close the loading window and activate the main stage
         loader.style.display = 'none';
         loadWordInstance();
-
 
       } catch (err) {
         console.error("Failed to build dynamic list:", err);
@@ -302,9 +272,9 @@
     // --- GAME ROUND LOGIC ---
     function loadWordInstance() {
       if (!roundWords || roundWords.length === 0) return;
-      
+
       const currentItem = roundWords[currentIdx];
-      
+
       // Setup state variables
       targetPinyinClean = currentItem.pinyin_clean.toLowerCase().replace(/[^a-z]/g, '');
       targetPinyinDisplay = currentItem.pinyin_toned;
@@ -319,7 +289,7 @@
       document.getElementById('english-meaning').textContent = currentItem.english;
       document.getElementById('wrong-count').textContent = '0';
       document.getElementById('wrong-letters').textContent = '';
-      
+
       // Hide intermediate validation forms
       document.getElementById('sentence-section').style.display = 'none';
       document.getElementById('next-word-btn').style.display = 'none';
@@ -341,7 +311,7 @@
     function renderBlanks() {
       let displayStr = "";
       let allSolved = true;
-      
+
       for (let char of targetPinyinClean) {
         if (guessedLetters.has(char)) {
           displayStr += char + " ";
@@ -350,7 +320,7 @@
           allSolved = false;
         }
       }
-      
+
       document.getElementById('word-blanks').textContent = displayStr.trim();
 
       if (allSolved && targetPinyinClean.length > 0) {
@@ -371,7 +341,7 @@
         document.getElementById(`key-${letter}`).style.background = 'var(--wrong)';
         wrongCount++;
         document.getElementById('wrong-count').textContent = wrongCount;
-        
+
         // Show wrong letters list
         const wrongArr = Array.from(guessedLetters).filter(l => !targetPinyinClean.includes(l));
         document.getElementById('wrong-letters').textContent = ` (${wrongArr.join(', ').toUpperCase()})`;
@@ -388,7 +358,7 @@
     window.addEventListener('keydown', (e) => {
       if (document.getElementById('loading-screen').style.display === 'flex') return;
       if (document.getElementById('sentence-section').style.display === 'block') return;
-      
+
       const key = e.key.toLowerCase();
       if (/^[a-z]$/.test(key)) {
         const btn = document.getElementById(`key-${key}`);
@@ -418,7 +388,7 @@
       document.getElementById('sentence-hz').textContent = currentItem.sentence_hz;
       document.getElementById('sentence-py').textContent = currentItem.sentence_py;
       document.getElementById('sentence-en').textContent = currentItem.sentence_en;
-      
+
       // Update header blanks with styled answer text
       document.getElementById('word-blanks').textContent = targetPinyinDisplay;
 
@@ -436,7 +406,7 @@
       if (cleanInput === targetPinyinClean) {
         feedbackDiv.textContent = "Correct! 太棒了!";
         feedbackDiv.className = "feedback correct";
-        
+
         scoreWordsGuessed++;
         if (sentenceFirstTry) {
           scorePerfectSentences++;
