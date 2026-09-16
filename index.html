@@ -473,20 +473,27 @@ const TENSE_LABEL = {
 };
  
 const RESPONSE_SCHEMA = {
-  type: "ARRAY",
-  items: {
-    type: "OBJECT",
-    properties: {
-      en:       { type: "STRING" },
-      answer:   { type: "STRING" },
-      tense:    { type: "STRING", enum: ["past", "present", "future"] },
-      hz:       { type: "STRING" },
-      py:       { type: "STRING" },
-      sentence: { type: "STRING" },
-    },
-    required: ["en", "answer", "tense", "hz", "py", "sentence"],
+  type: "object",
+  properties: {
+    words: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          en:       { type: "string" },
+          answer:   { type: "string" },
+          tense:    { type: "string", enum: ["past", "present", "future"] },
+          hz:       { type: "string" },
+          py:       { type: "string" },
+          sentence: { type: "string" },
+        },
+        required: ["en", "answer", "tense", "hz", "py", "sentence"],
+      }
+    }
   },
+  required: ["words"]
 };
+
  
 const MAX_WRONG = 6;
  
