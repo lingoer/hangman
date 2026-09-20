@@ -438,7 +438,7 @@
    ========================================================================= */
 const WORKER_URL = "https://hangman.lingoer.workers.dev";
 const ROUND_SIZE = 8;      // how many words Qwen generates per round
-const FETCH_TIMEOUT_MS = 25000;
+const FETCH_TIMEOUT_MS = 45000;   // room for Qwen to think, plus a Gemini failover if needed
  
 /* ============================= LEVEL META =============================
    promptHint feeds Qwen's instructions; label/desc/zh/badge/cls drive
@@ -619,7 +619,7 @@ try {
   let sanitizedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
   
   // 2. Clean up illegal trailing commas (a common LLM habit that breaks browsers)
-  sanitizedText = sanitizedText.replace(/,\s*([}\\]])/g, '$1');
+  sanitizedText = sanitizedText.replace(/,\s*([}\]])/g, '$1');
 
   // 3. Attempt the parse on the pristine text
   parsed = JSON.parse(sanitizedText);
