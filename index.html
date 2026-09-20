@@ -612,6 +612,8 @@ async function fetchRound(level) {
     clearTimeout(timeout);
  
    const text = await res.text();
+   console.log("Worker source:", res.headers.get("X-Source"));
+   console.log("Raw response:", text);
 let parsed;
 
 try {
@@ -637,6 +639,7 @@ try {
     }
  
     const items = parsed.map(normalizeItem).filter(item => item.en && item.answer && item.sentence.includes('___'));
+    console.table(items);
     if (items.length === 0) {
       throw new Error('None of the generated words had all the required fields.');
     }
