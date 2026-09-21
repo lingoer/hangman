@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shannon's Character Builder · 汉字拼装</title>
+<style>
+  :root {
+    --navy: #1a3c6e;
+    --navy-dark: #0b2445;
+    --blue: #2060a0;
+    --purple: #8a2be2;
+    --green: #1a7f37;
+    --red: #c9211e;
+    --grey: #555555;
+    --light-grey: #c9c9c9;
+    --bg: #f4f6fb;
+    --card-bg: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+  .zh { font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "WenQuanYi Zen Hei", sans-serif; }
+
+  #app { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  header.top { text-align: center; margin-bottom: 20px; }
+  header.top h1 { color: var(--navy); font-size: 1.9rem; margin: 0 0 4px; }
+  header.top p.zh { color: var(--grey); margin: 0; font-size: 1rem; }
+  .home-link {
+    display: inline-block; margin-bottom: 10px;
+    color: var(--blue); font-size: .9rem; text-decoration: none;
+  }
+  .home-link:hover { text-decoration: underline; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---------- Start screen ---------- */
+  .intro-box {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 16px 20px;
+    border: 1px solid #e2e6ef;
+    font-size: .95rem;
+    line-height: 1.5;
+  }
+  .intro-box .zh { color: var(--grey); font-size: .9rem; margin-top: 6px; }
+  .intro-box .ai-note {
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px dashed var(--light-grey);
+    color: var(--grey); font-size: .85rem;
+  }
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .theme-card {
+    background: var(--card-bg);
+    border: 2px solid #e2e6ef;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .theme-card:hover, .theme-card:focus-visible {
+    border-color: var(--navy);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(26,60,110,0.15);
+    outline: none;
+  }
+  .theme-card .icon { font-size: 2rem; }
+  .theme-card h3 { margin: 6px 0 2px; font-size: 1.2rem; color: var(--navy-dark); }
+  .theme-card p { margin: 3px 0; font-size: .9rem; color: var(--grey); line-height: 1.4; }
+  .theme-card .count { font-size: .8rem; color: #9aa1b2; margin-top: 8px; }
+
+  /* ---------- Game screen ---------- */
+  .game-topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+  }
+  .game-topbar .pill {
+    background: var(--navy); color: #fff;
+    padding: 5px 14px; border-radius: 999px;
+    font-size: .85rem; font-weight: 600;
+  }
+  .btn-link {
+    background: none; border: none; color: var(--blue);
+    text-decoration: underline; cursor: pointer; font-size: .9rem; padding: 4px;
+  }
+
+  .game-panel {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr minmax(150px, 210px);
+    gap: 16px 20px;
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid #e2e6ef;
+    padding: 22px;
+    min-height: 420px;
+  }
+  .clue-col { grid-column: 1; }
+  .gallows-wrap { grid-column: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .play-area { grid-column: 1 / -1; border-top: 1px dashed var(--light-grey); padding-top: 14px; }
+  @media (max-width: 640px) {
+    .game-panel { grid-template-columns: 1fr; padding: 16px; }
+    .clue-col, .gallows-wrap, .play-area { grid-column: 1; }
+    .gallows-wrap { order: 2; }
+    .play-area { order: 3; }
+    #gallows-svg { max-width: 130px; }
+  }
+
+  /* ---------- Loading / error overlay ---------- */
+  .loading-overlay {
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.93);
+    border-radius: 16px;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 20px; z-index: 20;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 42px; height: 42px;
+    border: 4px solid #e2e6ef; border-left-color: var(--navy);
+    border-radius: 50%; animation: spin 0.9s linear infinite; margin-bottom: 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-overlay .loading-text { color: var(--navy-dark); font-weight: 600; }
+  .loading-overlay .loading-sub { color: var(--grey); font-size: .85rem; margin-top: 4px; }
+  .loading-overlay .error-box { color: var(--red); font-weight: 600; max-width: 380px; }
+  .loading-overlay .error-detail { color: var(--grey); font-size: .82rem; margin: 8px 0 14px; max-width: 380px; }
+
+  /* ---------- Clue column ---------- */
+  .english-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--purple); }
+  #target-english { font-size: 2rem; font-weight: 800; color: var(--navy-dark); margin: 2px 0 6px; }
+  #hint-text { color: var(--grey); font-size: .95rem; line-height: 1.45; min-height: 2.8em; }
+  #word-display {
+    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "WenQuanYi Zen Hei", sans-serif;
+    font-size: 3rem; font-weight: 700; color: #111;
+    letter-spacing: .12em; margin-top: 10px; min-height: 1.3em; word-break: break-all;
+  }
+  #pinyin-display { color: var(--blue); font-style: italic; font-size: 1.5rem; min-height: 1.6em; margin-top: 2px; }
+
+  #lives-display { font-size: 1.1rem; font-weight: 700; color: var(--red); }
+  #gallows-svg { width: 100%; max-width: 190px; height: auto; }
+  .part { opacity: 0; transition: opacity .25s ease; }
+  .part.show { opacity: 1; }
+
+  /* ---------- Play area ---------- */
+  #step-prompt { font-weight: 700; color: var(--navy-dark); font-size: 1.05rem; }
+  #tone-legend { font-size: .82rem; color: var(--grey); margin-top: 4px; }
+
+  #choices-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2x2 grid ideal for mobile phone thumbs */
+    gap: 15px;
+    margin-top: 14px;
+    padding: 4px 0 10px;
+  }
+  #choices-container.result-mode { grid-template-columns: 1fr; }
+
+  .choice-btn {
+    background-color: #f0f4f8;
+    border: 2px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 18px 10px;
+    font-size: 28px;      /* Large characters */
+    font-weight: bold;
+    color: #1e293b;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent; /* Clean mobile tap highlight */
+  }
+  .choice-btn:hover:not(:disabled) { border-color: var(--navy); }
+  .choice-btn:active { transform: scale(0.95); background-color: #e2e8f0; }
+  .choice-btn:disabled { cursor: default; }
+  .choice-btn.wrong-choice { background: #fdeaea; color: var(--red); border-color: var(--red); opacity: .7; }
+  .choice-btn.tone-btn { white-space: pre; }
+
+  /* UI feedback flashes */
+  .correct-flash { animation: flashGreen 0.4s ease; }
+  .wrong-flash { animation: flashRed 0.4s ease; }
+  @keyframes flashGreen { 0%, 100% { color: inherit; } 50% { color: #22c55e; } }
+  @keyframes flashRed { 0%, 100% { color: inherit; } 50% { color: #ef4444; transform: translateX(5px); } }
+
+  .message-bar {
+    margin-top: 6px; padding: 10px 14px; border-radius: 10px;
+    font-size: .95rem; display: none;
+  }
+  .message-bar.show { display: block; }
+  .message-bar.info { background: #eef2ff; color: var(--navy-dark); }
+  .message-bar.success { background: #e6f6ea; color: var(--green); }
+  .message-bar.fail { background: #fdeaea; color: var(--red); }
+
+  .win-message, .lose-message { font-size: 1.2rem; font-weight: 700; text-align: center; }
+  .win-message { color: var(--green); }
+  .lose-message { color: var(--red); }
+  .reveal-word { text-align: center; }
+  .reveal-word .hz { font-size: 2.6rem; font-weight: 700; }
+  .reveal-word .py { font-size: 1.3rem; color: var(--blue); font-style: italic; }
+  .result-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  button.primary {
+    background: var(--navy); color: #fff; border: none;
+    padding: 12px 22px; border-radius: 8px;
+    font-size: 1rem; font-weight: 700; cursor: pointer;
+  }
+  button.primary:hover { background: var(--navy-dark); }
+  button.secondary {
+    background: #fff; color: var(--navy); border: 2px solid var(--navy);
+    padding: 10px 20px; border-radius: 8px;
+    font-size: .95rem; font-weight: 700; cursor: pointer;
+  }
+
+  /* ---------- Result screen ---------- */
+  .result-card {
+    background: var(--card-bg); border-radius: 16px;
+    border: 1px solid #e2e6ef; padding: 30px; text-align: center;
+  }
+  .result-card h2 { color: var(--navy); margin-top: 0; }
+  .stat-row { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin: 22px 0; }
+  .stat { min-width: 110px; }
+  .stat .num { font-size: 2rem; font-weight: 800; color: var(--navy); }
+  .stat .label { font-size: .82rem; color: var(--grey); }
+  .result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+
+  footer.credit { text-align: center; color: #b5bac6; font-size: .78rem; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="top">
+    <a class="home-link" href="index.html">&larr; Home / 首页</a>
+    <h1>Character Builder</h1>
+    <p class="zh">汉字拼装 — 部首、字形、拼音和声调</p>
+  </header>
+
+  <!-- START SCREEN -->
+  <section id="screen-start" class="screen active">
+    <div class="intro-box">
+      Build a Chinese word one piece at a time. Read the English word and the hint, then pick the
+      <b>radical</b>, the rest of the <b>character</b>, and the <b>tone</b> of each syllable.
+      Every wrong answer costs a life and adds a piece to the hangman. Choose a theme to start!
+      <div class="zh">先看英文和提示，再一步一步选出<b>部首</b>、<b>汉字</b>和每个音节的<b>声调</b>。
+      选错一次会少一条命，绞刑架也会多画一部分。选一个主题开始吧！</div>
+      <div class="ai-note">Every round is freshly generated by AI, so the words are different each time you play.</div>
+    </div>
+
+    <div class="theme-grid" id="theme-grid"></div>
+  </section>
+
+  <!-- GAME SCREEN -->
+  <section id="screen-game" class="screen">
+    <div class="game-topbar">
+      <span class="pill" id="progress-pill">Word 1 of 5</span>
+      <span class="pill" id="theme-pill">Fruit &amp; Food</span>
+      <button class="btn-link" id="quit-btn">&larr; change theme</button>
+    </div>
+
+    <div class="game-panel">
+      <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner" id="spinner"></div>
+        <div class="loading-text" id="loading-text">Asking the AI for new words&hellip;</div>
+        <div class="loading-sub">This usually takes a few seconds</div>
+      </div>
+
+      <div class="clue-col">
+        <div class="english-label">English</div>
+        <div id="target-english">Apple</div>
+        <div id="hint-text"></div>
+        <div id="word-display" class="zh" lang="zh-CN">_ _</div>
+        <div id="pinyin-display"></div>
+      </div>
+
+      <div class="gallows-wrap">
+        <svg id="gallows-svg" viewBox="0 0 200 220">
+          <line x1="15" y1="205" x2="120" y2="205" stroke="#1a3c6e" stroke-width="6" stroke-linecap="round"/>
+          <line x1="45" y1="205" x2="45" y2="15" stroke="#1a3c6e" stroke-width="6" stroke-linecap="round"/>
+          <line x1="45" y1="15" x2="130" y2="15" stroke="#1a3c6e" stroke-width="6" stroke-linecap="round"/>
+          <line x1="130" y1="15" x2="130" y2="38" stroke="#1a3c6e" stroke-width="4"/>
+          <circle class="part" id="part-1" cx="130" cy="55" r="16" fill="none" stroke="#0b2445" stroke-width="4"/>
+          <line class="part" id="part-2" x1="130" y1="71" x2="130" y2="130" stroke="#0b2445" stroke-width="4"/>
+          <line class="part" id="part-3" x1="130" y1="85" x2="104" y2="110" stroke="#0b2445" stroke-width="4" stroke-linecap="round"/>
+          <line class="part" id="part-4" x1="130" y1="85" x2="156" y2="110" stroke="#0b2445" stroke-width="4" stroke-linecap="round"/>
+          <line class="part" id="part-5" x1="130" y1="130" x2="108" y2="162" stroke="#0b2445" stroke-width="4" stroke-linecap="round"/>
+          <line class="part" id="part-6" x1="130" y1="130" x2="152" y2="162" stroke="#0b2445" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <div id="lives-display">❤️ x 6</div>
+      </div>
+
+      <div class="play-area">
+        <div id="step-prompt"></div>
+        <div id="tone-legend" style="display:none;">1 = high &amp; flat &middot; 2 = rising &middot; 3 = dips down then up &middot; 4 = falling</div>
+        <div id="choices-container"></div>
+        <div class="message-bar" id="message-bar"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULT SCREEN -->
+  <section id="screen-result" class="screen">
+    <div class="result-card">
+      <h2>Round complete! 完成!</h2>
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="stat-completed">0/0</div><div class="label">Words built</div></div>
+        <div class="stat"><div class="num" id="stat-perfect">0</div><div class="label">Perfect words (no mistakes)</div></div>
+        <div class="stat"><div class="num" id="stat-losses">0</div><div class="label">Times hangman finished</div></div>
+      </div>
+      <div class="result-actions">
+        <button class="primary" id="replay-btn">Play this theme again (new AI words)</button>
+        <button class="secondary" id="menu-btn">Choose a different theme</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="credit">Character Builder · words generated live by AI via a Cloudflare Worker</footer>
+</div>
+
+<script>
+/* =========================================================================
+   CONFIGURATION — point this at Shannon's Cloudflare Worker.
+   ========================================================================= */
+const WORKER_URL = "https://shannon.lingoer.workers.dev";
+const ROUND_SIZE = 5;              // how many words the AI generates per round
+const FETCH_TIMEOUT_MS = 70000;    // room for Qwen to think, plus a Gemini failover if needed
+const MAX_LIVES = 6;
+
+/* ============================= THEME META =============================
+   `promptHint` is sent to the Worker; the Worker also keeps its own copy
+   (THEME_HINTS) keyed by the same ids.
+======================================================================== */
+const THEMES = {
+  food:    { label: "Fruit & Food",       zh: "水果和食物",   icon: "🍎", desc: "apple, peach, milk…",        promptHint: "fruit, food and drink" },
+  animals: { label: "Animals",            zh: "动物",         icon: "🐱", desc: "cat, fish, horse…",          promptHint: "animals" },
+  people:  { label: "Family & People",    zh: "家人和朋友",   icon: "👩‍👧", desc: "mum, friend, teacher…",      promptHint: "family, people and school jobs" },
+  nature:  { label: "Nature & Weather",   zh: "自然和天气",   icon: "🌳", desc: "tree, river, rain…",         promptHint: "nature and weather" },
+  school:  { label: "School & Things",    zh: "学校和物品",   icon: "📚", desc: "book, door, pen…",           promptHint: "school and everyday objects" },
+  mixed:   { label: "Surprise me!",       zh: "随机",         icon: "🎲", desc: "a mix of everything",        promptHint: "a variety of everyday beginner topics" },
+};
+
+const TONE_MARKS = { "1": "ā", "2": "á", "3": "ǎ", "4": "à" };   // the same vowel with each tone mark
+
+/* ============================= STATE ============================= */
+let state = {
+  theme: null,
+  queue: [],
+  index: 0,
+  stats: { completed: 0, perfect: 0, losses: 0, total: 0 },
+};
+
+// Game State Tracking (per word)
+let currentStepIndex = 0;
+let livesRemaining = MAX_LIVES;
+let activeWordData = null;
+let mistakesThisWord = 0;
+let wordFinished = false;
+
+/* ============================= DOM refs ============================= */
+const screens = {
+  start: document.getElementById('screen-start'),
+  game: document.getElementById('screen-game'),
+  result: document.getElementById('screen-result'),
+};
+const themeGrid = document.getElementById('theme-grid');
+const progressPill = document.getElementById('progress-pill');
+const themePill = document.getElementById('theme-pill');
+const targetEnglishEl = document.getElementById('target-english');
+const hintTextEl = document.getElementById('hint-text');
+const wordDisplayEl = document.getElementById('word-display');
+const pinyinDisplayEl = document.getElementById('pinyin-display');
+const livesDisplayEl = document.getElementById('lives-display');
+const stepPromptEl = document.getElementById('step-prompt');
+const toneLegendEl = document.getElementById('tone-legend');
+const choicesContainer = document.getElementById('choices-container');
+const messageBar = document.getElementById('message-bar');
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingText = document.getElementById('loading-text');
+
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  screens[name].classList.add('active');
+}
+
+/* ============================= Build start screen ============================= */
+function buildThemeGrid() {
+  themeGrid.innerHTML = '';
+  Object.keys(THEMES).forEach(key => {
+    const meta = THEMES[key];
+    const card = document.createElement('div');
+    card.className = 'theme-card';
+    card.tabIndex = 0;
+    card.innerHTML = `
+      <div class="icon">${meta.icon}</div>
+      <h3>${meta.label}</h3>
+      <p class="zh">${meta.zh}</p>
+      <p>${meta.desc}</p>
+      <div class="count">${ROUND_SIZE} AI-generated words this round</div>
+    `;
+    card.addEventListener('click', () => startTheme(key));
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') startTheme(key); });
+    themeGrid.appendChild(card);
+  });
+}
+
+/* ============================= AI fetch ============================= */
+// The Worker reads the theme id and the word count out of this text (see shannon_worker.js),
+// so keep the phrases `exactly N distinct` and `theme "id"` intact.
+function buildPrompt(theme) {
+  const meta = THEMES[theme];
+  return `Generate exactly ${ROUND_SIZE} distinct beginner Mandarin Chinese words for a character-building game
+aimed at a young learner, on the theme "${theme}": ${meta.promptHint}.
+
+Each word is broken into steps: pick the radical, pick the rest of the character, then pick the tone of each syllable.
+Return a JSON array of ${ROUND_SIZE} words, each with english, hint and characters (char, pinyin, radical, radicalWrong, body, bodyWrong).`;
+}
+
+// Defensive check on what the Worker sends back, so one bad word never breaks the game.
+function normalizeWord(raw) {
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.steps) || raw.steps.length === 0) return null;
+  const english = String(raw.english == null ? '' : raw.english).trim();
+  if (!english) return null;
+
+  const steps = [];
+  for (const s of raw.steps) {
+    if (!s || !['radical', 'body', 'tone'].includes(s.type)) return null;
+    const correct = String(s.correct == null ? '' : s.correct);
+    const choices = [...new Set((Array.isArray(s.choices) ? s.choices : []).map(String))];
+    if (!correct || choices.length < 2 || !choices.includes(correct)) return null;
+    steps.push({
+      type: s.type,
+      correct,
+      choices,
+      displayAfter: String(s.displayAfter == null ? '' : s.displayAfter),
+      syllable: String(s.syllable == null ? '' : s.syllable),
+    });
+  }
+
+  const lastOf = type => { const f = steps.filter(s => s.type === type); return f.length ? f[f.length - 1].displayAfter : ''; };
+  return {
+    english,
+    hint: String(raw.hint == null ? '' : raw.hint).trim(),
+    hanzi: String(raw.hanzi || '') || lastOf('body'),
+    pinyin: String(raw.pinyin || '') || lastOf('tone'),
+    steps,
+  };
+}
+
+async function fetchRound(theme) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: buildPrompt(theme) }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    const text = await res.text();
+    console.log("Worker source:", res.headers.get("X-Source"));
+    console.log("Raw response:", text);
+    let parsed;
+
+    try {
+      // 1. Defensively strip out markdown code fences if they slipped through
+      let sanitizedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+      // 2. Clean up illegal trailing commas (a common LLM habit that breaks browsers)
+      sanitizedText = sanitizedText.replace(/,\s*([}\]])/g, '$1');
+
+      // 3. Attempt the parse on the pristine text
+      parsed = JSON.parse(sanitizedText);
+    } catch (e) {
+      console.error("The bad raw text was:", text); // Prints it to your browser F12 console to inspect!
+      throw new Error('The AI response was not valid JSON.');
+    }
+
+    if (parsed && parsed.error) {
+      throw new Error(parsed.error);
+    }
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('The AI response was empty or not a list of words.');
+    }
+
+    const items = parsed.map(normalizeWord).filter(Boolean);
+    console.table(items.map(w => ({ english: w.english, hanzi: w.hanzi, pinyin: w.pinyin, steps: w.steps.length, hint: w.hint })));
+    if (items.length === 0) {
+      throw new Error('None of the generated words had all the required fields.');
+    }
+    return items;
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') {
+      throw new Error('The AI took too long to respond. Please try again.');
+    }
+    throw err;
+  }
+}
+
+function showLoading() {
+  loadingOverlay.innerHTML = `
+    <div class="spinner" id="spinner"></div>
+    <div class="loading-text" id="loading-text">Asking the AI for new words&hellip;</div>
+    <div class="loading-sub">This usually takes a few seconds</div>
+  `;
+  loadingOverlay.classList.add('show');
+}
+
+function showLoadingError(theme, message) {
+  loadingOverlay.innerHTML = '';
+  const box = document.createElement('div');
+  box.className = 'error-box';
+  box.textContent = "Couldn't generate new words";
+  const detail = document.createElement('div');
+  detail.className = 'error-detail';
+  detail.textContent = message;
+  const btn = document.createElement('button');
+  btn.className = 'primary';
+  btn.id = 'retry-fetch-btn';
+  btn.textContent = 'Try again';
+  btn.addEventListener('click', () => startTheme(theme));
+  loadingOverlay.append(box, detail, btn);
+}
+
+function hideLoading() {
+  loadingOverlay.classList.remove('show');
+}
+
+/* ============================= Game flow ============================= */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+async function startTheme(key) {
+  state.theme = key;
+  themePill.textContent = THEMES[key].label;
+  showScreen('game');
+  showLoading();
+
+  try {
+    const items = await fetchRound(key);
+    state.queue = items;               // the Worker already varies the words; keep its order
+    state.index = 0;
+    state.stats = { completed: 0, perfect: 0, losses: 0, total: state.queue.length };
+    hideLoading();
+    initGame(state.queue[0]);
+  } catch (err) {
+    showLoadingError(key, err.message || String(err));
+  }
+}
+
+/**
+ * Initializes a new word with a payload from the Worker
+ */
+function initGame(gamePayload) {
+  activeWordData = gamePayload;
+  currentStepIndex = 0;
+  livesRemaining = MAX_LIVES;
+  mistakesThisWord = 0;
+  wordFinished = false;
+
+  progressPill.textContent = `Word ${state.index + 1} of ${state.queue.length}`;
+
+  // Set initial text elements (textContent: AI text is never injected as HTML)
+  targetEnglishEl.textContent = activeWordData.english;
+  hintTextEl.textContent = activeWordData.hint;
+  const totalChars = activeWordData.steps.filter(s => s.type === 'tone').length;
+  wordDisplayEl.textContent = Array(Math.max(totalChars, 1)).fill('_').join(' ');
+  pinyinDisplayEl.textContent = '';
+
+  document.querySelectorAll('.part').forEach(p => p.classList.remove('show'));
+  hideMessage();
+  choicesContainer.classList.remove('result-mode');
+  updateLivesUI();
+  renderStep();
+}
+
+function stepPromptText(step, i) {
+  const steps = activeWordData.steps;
+  const totalChars = steps.filter(s => s.type === 'tone').length;
+  const charNo = steps.slice(0, i).filter(s => s.type === 'tone').length + 1;
+  const prefix = totalChars > 1 ? `Character ${charNo} of ${totalChars} — ` : '';
+
+  if (step.type === 'radical') return `${prefix}Which radical (部首 bùshǒu) is in this character?`;
+  if (step.type === 'body') {
+    const prev = steps[i - 1];
+    return (prev && prev.type === 'radical')
+      ? `${prefix}Now pick the other part of the character.`
+      : `${prefix}Pick the correct character.`;
+  }
+  return step.syllable
+    ? `${prefix}What tone (声调 shēngdiào) is “${step.syllable}”?`
+    : `${prefix}What tone (声调 shēngdiào) is this syllable?`;
+}
+
+/**
+ * Renders the 4 dynamic option buttons based on the current step
+ */
+function renderStep() {
+  choicesContainer.innerHTML = ""; // Clear old buttons
+
+  if (currentStepIndex >= activeWordData.steps.length) {
+    handleWin();
+    return;
+  }
+
+  const currentStep = activeWordData.steps[currentStepIndex];
+  stepPromptEl.textContent = stepPromptText(currentStep, currentStepIndex);
+  toneLegendEl.style.display = currentStep.type === 'tone' ? 'block' : 'none';
+
+  // Tones keep their 1-2-3-4 order; radicals and characters are shuffled so the answer moves around
+  const choices = currentStep.type === 'tone'
+    ? currentStep.choices.slice().sort()
+    : shuffle(currentStep.choices);
+
+  // Create 4 clean, large choice buttons
+  choices.forEach(choice => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    if (currentStep.type === 'tone') {
+      btn.classList.add('tone-btn');
+      btn.textContent = TONE_MARKS[choice] ? `${choice}   ${TONE_MARKS[choice]}` : choice;
+    } else {
+      btn.classList.add('zh');
+      btn.lang = 'zh-CN';
+      btn.textContent = choice;
+    }
+    btn.onclick = () => handleGuess(choice, currentStep, btn);
+    choicesContainer.appendChild(btn);
+  });
+}
+
+/**
+ * Handles the logic when a user taps a choice button
+ */
+function handleGuess(selectedChoice, currentStep, btn) {
+  if (wordFinished) return;
+  if (selectedChoice === currentStep.correct) {
+    handleCorrectGuess(currentStep);   // Correct Choice
+  } else {
+    handleIncorrectGuess(btn);         // Wrong Choice
+  }
+}
+
+function pinyinUpTo(step) {
+  // "píng guǒ" from the Worker, shown one syllable at a time; falls back to the step's own displayAfter
+  const syl = (activeWordData.pinyin || '').split(/\s+/).filter(Boolean);
+  const toneSteps = activeWordData.steps.filter(s => s.type === 'tone');
+  const k = toneSteps.indexOf(step);
+  return (syl.length === toneSteps.length && k >= 0) ? syl.slice(0, k + 1).join(' ') : step.displayAfter;
+}
+
+function handleCorrectGuess(currentStep) {
+  // Update the visual character string on screen
+  if (currentStep.type === 'tone') {
+    pinyinDisplayEl.textContent = pinyinUpTo(currentStep);
+    flashDisplay("pinyin-display", "correct-flash");
+  } else {
+    let text = currentStep.displayAfter;
+    if (currentStep.type === 'body') {
+      const totalChars = activeWordData.steps.filter(s => s.type === 'tone').length;
+      const done = [...text].length;
+      text += ' _'.repeat(Math.max(0, totalChars - done));   // blanks for the characters still to come
+    }
+    wordDisplayEl.textContent = text;
+    flashDisplay("word-display", "correct-flash");
+  }
+  showMessage('success', ['Correct!', 'Great!', 'Yes!', 'Nice one!'][Math.floor(Math.random() * 4)]);
+
+  // Advance to next part of the word assembly puzzle
+  currentStepIndex++;
+  renderStep();
+}
+
+function handleIncorrectGuess(btn) {
+  livesRemaining--;
+  mistakesThisWord++;
+  if (btn) {
+    btn.classList.add('wrong-choice');
+    btn.disabled = true;
+  }
+  const part = document.getElementById(`part-${MAX_LIVES - livesRemaining}`);
+  if (part) part.classList.add('show');
+  updateLivesUI();
+
+  // Animate error flash
+  flashDisplay("lives-display", "wrong-flash");
+  showMessage('fail', 'Not quite — try another one.');
+
+  if (livesRemaining <= 0) {
+    handleGameOver();
+  }
+}
+
+/**
+ * UI Updates and Animations
+ */
+function updateLivesUI() {
+  livesDisplayEl.innerText = `❤️ x ${livesRemaining}`;
+}
+
+function flashDisplay(elementId, className) {
+  const el = document.getElementById(elementId);
+  el.classList.remove(className);
+  void el.offsetWidth;                       // restart the animation if it is already running
+  el.classList.add(className);
+  setTimeout(() => el.classList.remove(className), 400);
+}
+
+function speakChinese(text) {
+  if (!('speechSynthesis' in window) || !text) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  u.rate = 0.8;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+// Shared by the win and game-over screens: show the finished word, a Listen button and a Next button.
+function showFinishedWord(messageClass, messageText) {
+  wordFinished = true;
+  wordDisplayEl.textContent = activeWordData.hanzi;
+  pinyinDisplayEl.textContent = activeWordData.pinyin;
+
+  const reveal = el('div', 'reveal-word');
+  const hz = el('div', 'hz zh', activeWordData.hanzi);
+  hz.lang = 'zh-CN';
+  reveal.append(hz, el('div', 'py', activeWordData.pinyin));
+
+  const btns = el('div', 'result-btns');
+  if ('speechSynthesis' in window) {
+    const listen = el('button', 'secondary', '🔊 Listen');
+    listen.onclick = () => speakChinese(activeWordData.hanzi);
+    btns.appendChild(listen);
+  }
+  const isLast = state.index + 1 >= state.queue.length;
+  const next = el('button', 'next-btn primary', isLast ? 'See results →' : 'Next word →');
+  next.onclick = () => requestNextWord();
+  btns.appendChild(next);
+
+  choicesContainer.classList.add('result-mode');
+  choicesContainer.innerHTML = '';
+  choicesContainer.append(el('div', messageClass, messageText), reveal, btns);
+  stepPromptEl.textContent = '';
+  toneLegendEl.style.display = 'none';
+  next.focus();
+}
+
+function handleWin() {
+  state.stats.completed++;
+  if (mistakesThisWord === 0) state.stats.perfect++;
+  hideMessage();
+  showFinishedWord('win-message', '🎉 Level Complete! Awesome job!');
+  hintTextEl.textContent = "You successfully assembled the characters!";
+}
+
+function handleGameOver() {
+  state.stats.losses++;
+  hideMessage();
+  showFinishedWord('lose-message', '😢 Game Over! Here is the word:');
+}
+
+/**
+ * Moves on to the next word of the round (the whole round was fetched from the Worker up front)
+ */
+function requestNextWord() {
+  state.index++;
+  if (state.index >= state.queue.length) {
+    showResults();
+  } else {
+    console.log("Loading next word of the round...", state.index + 1, "of", state.queue.length);
+    initGame(state.queue[state.index]);
+  }
+}
+
+function showMessage(kind, text) {
+  messageBar.className = `message-bar show ${kind}`;
+  messageBar.textContent = text;
+}
+function hideMessage() {
+  messageBar.className = 'message-bar';
+  messageBar.textContent = '';
+}
+
+function showResults() {
+  document.getElementById('stat-completed').textContent = `${state.stats.completed}/${state.stats.total}`;
+  document.getElementById('stat-perfect').textContent = state.stats.perfect;
+  document.getElementById('stat-losses').textContent = state.stats.losses;
+  showScreen('result');
+}
+
+/* ============================= Wire up events ============================= */
+document.getElementById('quit-btn').addEventListener('click', () => { window.speechSynthesis && window.speechSynthesis.cancel(); showScreen('start'); });
+document.getElementById('replay-btn').addEventListener('click', () => startTheme(state.theme));
+document.getElementById('menu-btn').addEventListener('click', () => showScreen('start'));
+
+// Keyboard: press 1-4 to choose the 1st-4th button
+window.addEventListener('keydown', e => {
+  if (!screens.game.classList.contains('active') || wordFinished) return;
+  if (e.key >= '1' && e.key <= '4') {
+    const btns = choicesContainer.querySelectorAll('.choice-btn');
+    const btn = btns[Number(e.key) - 1];
+    if (btn && !btn.disabled) btn.click();
+  }
+});
+
+buildThemeGrid();
+</script>
+</body>
+</html>
