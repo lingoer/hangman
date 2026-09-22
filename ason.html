@@ -447,7 +447,7 @@
    ========================================================================= */
 const WORKER_URL = "https://hangman.lingoer.workers.dev";
 const ROUND_SIZE = 8;      // how many words Qwen generates per round
-const FETCH_TIMEOUT_MS = 45000;   // room for Qwen to think, plus a Gemini failover if needed
+const FETCH_TIMEOUT_MS = 100000;   // room for Qwen to think, plus a Gemini failover if needed
  
 /* ============================= LEVEL META =============================
    promptHint feeds Qwen's instructions; label/desc/zh/badge/cls drive
